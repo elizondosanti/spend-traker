@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Spend Traker
 
-## Getting Started
+Gastás con tu tarjeta BAC y la app lo anota sola. Lee (solo lectura) los correos del BAC en tu Gmail —compras, SINPE y pago de servicios—, los clasifica en tus categorías y te avisa cuando algo necesita tu confirmación. Cada vez que corregís algo, aprende.
 
-First, run the development server:
+## Correr en tu compu
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrí http://localhost:3000 y tocá **Entrar como demo**. No hace falta configurar nada: se usa una base de datos embebida (carpeta `.data/`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Para probar el flujo principal sin Gmail: en **Inicio** usá **Simular correo BAC**.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Pruebas automáticas:
 
-## Learn More
+```bash
+npm test
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Qué hace falta para producción
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Copiá `.env.example` a `.env.local` (en local) o cargá las mismas variables en Vercel → Project → Settings → Environment Variables.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Variable | Para qué |
+| --- | --- |
+| `DATABASE_URL` | Postgres de Neon (Vercel Marketplace → Neon) |
+| `SESSION_SECRET` | Firma las sesiones. Obligatoria en producción |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Botón **Conectar Gmail** |
+| `GOOGLE_PLACES_API_KEY` | Reconocer comercios nuevos (opcional) |
+| `AI_GATEWAY_API_KEY` | Clasificar con IA (en Vercel no hace falta: usa OIDC) |
+| `CRON_SECRET` | Protege la sincronización diaria |
 
-## Deploy on Vercel
+Sin IA ni Places la app funciona igual: usa reglas por palabras clave y lo que aprendió; lo dudoso va a **Avisos**.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Desplegar en Vercel
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Subí esta carpeta a un repo (GitHub) e importalo en [vercel.com/new](https://vercel.com/new).
+2. En el proyecto: **Storage → Neon → Create** (eso crea `DATABASE_URL` solo).
+3. **AI Gateway**: en el dashboard del equipo, activalo. En producción la app se autentica sola.
+4. Cargá `SESSION_SECRET` y `CRON_SECRET` (cualquier texto largo aleatorio: `openssl rand -base64 32`).
+5. Deploy. Las tablas se crean solas en la primera visita.
+
+O desde la terminal: `npx vercel link`, `npx vercel env pull`, `npx vercel --prod`.
+
+## Configurar Gmail (Google Cloud)
+
+1. [console.cloud.google.com](https://console.cloud.google.com) → crear proyecto → **APIs y servicios → Biblioteca** → habilitar **Gmail API**.
+2. **Pantalla de consentimiento OAuth**: tipo *Externo*, agregá el scope `https://www.googleapis.com/auth/gmail.readonly` y, mientras esté en modo prueba, agregá como **usuarios de prueba** los Gmail que van a usar en la demo.
+3. **Credenciales → Crear ID de cliente OAuth** → *Aplicación web*. URI de redirección autorizada:
+   - `http://localhost:3000/api/gmail/callback`
+   - `https://TU-APP.vercel.app/api/gmail/callback`
+4. Copiá el ID y el secreto a `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`.
+
+La sincronización corre al abrir **Inicio** (si pasaron más de 2 minutos), con el botón **Revisar Gmail ahora** y una vez al día por cron (`vercel.json`).
+
+**Plan B sin Gmail OAuth:** en **Ajustes** cada usuario tiene una dirección web secreta. Cualquier servicio de reenvío puede hacer `POST` ahí con `{ from, subject, html }` o el texto del correo.
+
+## Seguridad
+
+- Gmail en **solo lectura** (`gmail.readonly`); el token se guarda cifrado (AES-256-GCM).
+- Solo se procesan correos de `@baccredomatic.com` y `@notificacionesbaccr.com`; el resto ni se abre.
+- Nunca se entra a la banca en línea ni se piden claves del banco.
+- Cada correo se procesa una sola vez (no hay movimientos duplicados).
+
+## Guion de demo (3 minutos)
+
+1. **(0:00) Problema.** "Nadie anota sus gastos. El BAC ya te manda un correo por cada compra; nosotros lo aprovechamos."
+2. **(0:20) Landing.** Mostrar los tres puntos de confianza: solo lectura, solo correos del BAC, nunca la clave del banco.
+3. **(0:40) Entrar como demo → Inicio.** Gastado vs. tope en colones y dólares, barras por categoría, Supermercado pasado del tope.
+4. **(1:10) Simular correo BAC → "Compra AMEX · Dunkin" → Simular llegada.** Aparece al toque en Restaurantes, con 0 tokens: lo aprendió de antes.
+5. **(1:30) Simular "SINPE recibido · Sin descripción".** Cae en **Avisos**. Escribir el concepto ("alimentación"), elegir Supermercado, Guardar. "La próxima vez lo hace sola."
+6. **(2:00) Movimientos.** Filtrar por tarjeta (AMEX 4743 vs. MASTER 3771) y abrir **Detalle**: fuente, confianza y costo de IA.
+7. **(2:20) Ajustes.** Comercios aprendidos y costo total de IA: "cuanto más se usa, menos tokens gasta".
+8. **(2:40) Cierre.** Si hay Gmail real conectado: **Revisar Gmail ahora** y mostrar una compra de verdad.
+
+Antes de presentar: **Ajustes → Reiniciar datos demo**. Grabá un video de respaldo de este mismo recorrido por si falla el wifi.
