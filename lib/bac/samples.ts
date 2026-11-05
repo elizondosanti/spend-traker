@@ -1,6 +1,6 @@
 /**
  * Real BAC email layouts (Nov 2026), with cardholder names anonymized.
- * Used by "Simular correo BAC" and by the parser tests.
+ * Fixture emails for parser/ingest tests (not shown in production UI).
  */
 export type SampleEmail = { id: string; label: string; from: string; subject: string; text: string };
 

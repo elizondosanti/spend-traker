@@ -3,13 +3,10 @@
 import { useActionState } from "react";
 import { simulateAction, syncGmailAction } from "@/app/actions";
 
-type Sample = { id: string; label: string };
-
+/** Local/dev only: paste a real BAC email. Hidden on Vercel production. */
 export function SimulatePanel({
-  samples,
   labels,
 }: {
-  samples: Sample[];
   labels: { title: string; help: string; button: string; paste: string };
 }) {
   const [state, action, pending] = useActionState(simulateAction, undefined);
@@ -19,17 +16,10 @@ export function SimulatePanel({
         <h2 className="font-semibold">{labels.title}</h2>
         <p className="text-sm text-slate-600">{labels.help}</p>
       </div>
-      <select name="sampleId" className="input" aria-label={labels.title}>
-        {samples.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.label}
-          </option>
-        ))}
-      </select>
-      <details>
-        <summary className="cursor-pointer text-sm text-brand">{labels.paste}</summary>
-        <textarea name="text" rows={6} className="input mt-2 font-mono text-xs" />
-      </details>
+      <label className="block text-sm">
+        <span className="mb-1 block font-medium">{labels.paste}</span>
+        <textarea name="text" rows={8} required className="input font-mono text-xs" placeholder={labels.paste} />
+      </label>
       <button className="btn" disabled={pending}>
         {pending ? "…" : labels.button}
       </button>

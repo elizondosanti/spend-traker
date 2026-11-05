@@ -1,5 +1,5 @@
 import type { Group } from "./categories";
-import { query, queryOne } from "./db";
+import { newId, query, queryOne } from "./db";
 import { convert, type Currency } from "./money";
 
 export type Category = {
@@ -55,6 +55,18 @@ export async function listCategories(userId: string, includeArchived = false): P
 
 export async function listCards(userId: string): Promise<Card[]> {
   return query<Card>("SELECT id, brand, last4, nickname FROM cards WHERE user_id = $1 ORDER BY brand, last4", [userId]);
+}
+
+/** Manual card (Ajustes) or email ingest. Same unique key as BAC: brand + last4. */
+export async function createCard(userId: string, brand: string, last4: string, nickname = ""): Promise<string> {
+  const row = await queryOne<{ id: string }>(
+    `INSERT INTO cards (id, user_id, brand, last4, nickname) VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (user_id, brand, last4) DO UPDATE SET
+       nickname = CASE WHEN EXCLUDED.nickname <> '' THEN EXCLUDED.nickname ELSE cards.nickname END
+     RETURNING id`,
+    [newId(), userId, brand || "TARJETA", last4, nickname],
+  );
+  return row!.id;
 }
 
 const TX_SELECT = `SELECT t.id, t.kind, t.direction, t.merchant, t.concept, t.city, t.amount, t.currency, t.occurred_at,

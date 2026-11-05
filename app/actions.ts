@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { SAMPLE_EMAILS } from "@/lib/bac/samples";
 import { GROUPS, SEED_CATEGORIES, type Group } from "@/lib/categories";
 import { hashPassword, verifyPassword } from "@/lib/crypto";
+import { createCard } from "@/lib/data";
 import { newId, query, queryOne } from "@/lib/db";
 import { ensureDemoUser, resetDemo } from "@/lib/demo";
 import { disconnectGmail, syncGmail } from "@/lib/gmail";
@@ -123,6 +123,16 @@ export async function updateCardAction(form: FormData): Promise<void> {
   revalidateApp();
 }
 
+export async function createCardAction(form: FormData): Promise<void> {
+  const user = await requireUser();
+  const brand = str(form, "brand").toUpperCase();
+  const last4 = str(form, "last4").replace(/\D/g, "").slice(-4);
+  const nickname = str(form, "nickname").slice(0, 40);
+  if (!["VISA", "MASTER", "AMEX", "TARJETA"].includes(brand) || last4.length !== 4) return;
+  await createCard(user.id, brand, last4, nickname);
+  revalidateApp();
+}
+
 export async function disconnectGmailAction(): Promise<void> {
   const user = await requireUser();
   await disconnectGmail(user.id);
@@ -149,10 +159,10 @@ export async function resetDemoAction(): Promise<void> {
 // ---- Movements ----
 
 export async function simulateAction(_: FormState, form: FormData): Promise<FormState> {
+  // Production (Vercel) never shows the panel; refuse even if called directly.
+  if (process.env.VERCEL) return { error: "—" };
   const user = await requireUser();
-  const pasted = str(form, "text");
-  const sample = SAMPLE_EMAILS.find((s) => s.id === str(form, "sampleId"));
-  const text = pasted || sample?.text;
+  const text = str(form, "text");
   if (!text) return { error: "—" };
   const result = await ingestEmail({ userId: user.id, text, simulate: true });
   revalidateApp();

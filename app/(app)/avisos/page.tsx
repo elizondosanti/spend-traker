@@ -3,7 +3,7 @@ import { listCategories, listPendingReviews } from "@/lib/data";
 import { formatDate } from "@/lib/format";
 import { translator, type TKey } from "@/lib/i18n";
 import { formatSignedMoney } from "@/lib/money";
-import { movementConceptLabel } from "@/lib/movement-view";
+import { movementConceptDisplay } from "@/lib/movement-view";
 import { requireUser, uiLang } from "@/lib/session";
 
 export default async function Review() {
@@ -26,8 +26,7 @@ export default async function Review() {
         {reviews.map(({ id, reason, transaction: tx }) => {
           const needsConcept = reason === "sinpe_sin_concepto";
           const suggested = nameOf(tx.category_id);
-          const conceptLabel = movementConceptLabel(tx, tr);
-          const hasRealConcept = Boolean(tx.concept?.trim());
+          const concept = movementConceptDisplay(tx, tr);
           const place = tx.city?.trim() || "";
           return (
             <li key={id} className="card space-y-3">
@@ -37,15 +36,15 @@ export default async function Review() {
                     {tr(`reason_${reason}` as TKey)}
                   </span>
                   <p className="mt-1 font-semibold">{tx.merchant}</p>
-                  {conceptLabel && (
-                    <p className={`mt-0.5 text-sm ${hasRealConcept ? "font-medium text-ink" : "italic text-slate-500"}`}>
-                      {hasRealConcept ? (
+                  {concept && (
+                    <p className={`mt-0.5 text-sm ${concept.empty ? "italic text-slate-500" : "font-medium text-ink"}`}>
+                      {concept.empty ? (
+                        concept.text
+                      ) : (
                         <>
                           <span className="text-xs font-normal uppercase tracking-wide text-slate-500">{tr("concept")}: </span>
-                          “{conceptLabel}”
+                          “{concept.text}”
                         </>
-                      ) : (
-                        conceptLabel
                       )}
                     </p>
                   )}

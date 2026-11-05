@@ -3,13 +3,12 @@ import { after } from "next/server";
 import { BudgetBar } from "@/components/BudgetBar";
 import { OriginPanel } from "@/components/OriginPanel";
 import { SimulatePanel, SyncButton } from "@/components/SimulatePanel";
-import { SAMPLE_EMAILS } from "@/lib/bac/samples";
 import { countPendingReviews, currentMonth, getGmailConnection, listTransactions, monthSummary } from "@/lib/data";
 import { formatDate, formatMonth, shiftMonth } from "@/lib/format";
 import { syncGmailIfStale } from "@/lib/gmail";
 import { translator } from "@/lib/i18n";
 import { formatMoney, formatSignedMoney } from "@/lib/money";
-import { movementAmount, movementFacts, movementMeta } from "@/lib/movement-view";
+import { movementAmount, movementConceptDisplay, movementFacts, movementMeta } from "@/lib/movement-view";
 import { requireUser, uiLang } from "@/lib/session";
 
 const one = (value: string | string[] | undefined) => (typeof value === "string" ? value : "");
@@ -152,10 +151,11 @@ export default async function Home({ searchParams }: PageProps<"/inicio">) {
         </section>
 
         <aside className="space-y-4">
-          <SimulatePanel
-            samples={SAMPLE_EMAILS.map(({ id, label }) => ({ id, label }))}
-            labels={{ title: tr("simulateTitle"), help: tr("simulateHelp"), button: tr("simulateButton"), paste: tr("pasteEmail") }}
-          />
+          {!process.env.VERCEL && (
+            <SimulatePanel
+              labels={{ title: tr("simulateTitle"), help: tr("simulateHelp"), button: tr("simulateButton"), paste: tr("pasteEmail") }}
+            />
+          )}
           {gmail && (
             <div className="card space-y-2">
               <p className="text-sm text-slate-600">
@@ -222,29 +222,38 @@ export default async function Home({ searchParams }: PageProps<"/inicio">) {
                 }
               : undefined
           }
-          rows={categoryTxs.map((tx) => ({
-            id: tx.id,
-            href: inicioHref(month, category?.id, tx.id),
-            merchant: tx.merchant,
-            meta: movementMeta(tx, lang, tr),
-            amount: movementAmount(tx, lang),
-            income: tx.direction === "ingreso",
-          }))}
+          rows={categoryTxs.map((tx) => {
+            const concept = movementConceptDisplay(tx, tr);
+            return {
+              id: tx.id,
+              href: inicioHref(month, category?.id, tx.id),
+              merchant: tx.merchant,
+              concept: concept && !concept.empty ? concept.text : null,
+              meta: movementMeta(tx, lang, tr),
+              amount: movementAmount(tx, lang),
+              income: tx.direction === "ingreso",
+            };
+          })}
           detail={
             detailTx
-              ? {
-                  merchant: detailTx.merchant,
-                  amount: movementAmount(detailTx, lang),
-                  income: detailTx.direction === "ingreso",
-                  kind: tr(detailTx.kind),
-                  rows: [
-                    {
-                      label: tr("category"),
-                      value: summary.categories.find((c) => c.id === detailTx.category_id)?.name ?? tr("uncategorized"),
-                    },
-                    ...movementFacts(detailTx, lang, tr),
-                  ],
-                }
+              ? (() => {
+                  const concept = movementConceptDisplay(detailTx, tr);
+                  return {
+                    merchant: detailTx.merchant,
+                    concept: concept?.text ?? null,
+                    conceptEmpty: concept?.empty,
+                    amount: movementAmount(detailTx, lang),
+                    income: detailTx.direction === "ingreso",
+                    kind: tr(detailTx.kind),
+                    rows: [
+                      {
+                        label: tr("category"),
+                        value: summary.categories.find((c) => c.id === detailTx.category_id)?.name ?? tr("uncategorized"),
+                      },
+                      ...movementFacts(detailTx, lang, tr),
+                    ],
+                  };
+                })()
               : undefined
           }
           labels={{

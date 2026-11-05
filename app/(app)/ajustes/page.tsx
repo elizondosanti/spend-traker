@@ -1,4 +1,4 @@
-import { resetDemoAction, updateCardAction, updateSettingsAction } from "@/app/actions";
+import { createCardAction, resetDemoAction, updateCardAction, updateSettingsAction } from "@/app/actions";
 import { GmailCard } from "@/components/GmailCard";
 import { PasswordForm } from "@/components/PasswordForm";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -56,6 +56,7 @@ export default async function Settings({ searchParams }: PageProps<"/ajustes">) 
           <h2 className="text-lg font-semibold">{tr("cards")}</h2>
           <p className="text-sm text-slate-600">{tr("cardsHelp")}</p>
         </div>
+        {cards.length === 0 && <p className="text-sm text-slate-500">{tr("noCardsYet")}</p>}
         <ul className="space-y-2">
           {cards.map((c) => (
             <li key={c.id}>
@@ -70,6 +71,35 @@ export default async function Settings({ searchParams }: PageProps<"/ajustes">) 
             </li>
           ))}
         </ul>
+        <form action={createCardAction} className="flex flex-wrap items-end gap-2 border-t border-slate-100 pt-3">
+          <label className="text-sm">
+            <span className="mb-1 block font-semibold">{tr("cardBrand")}</span>
+            <select name="brand" required className="input w-36" defaultValue="VISA" aria-label={tr("cardBrand")}>
+              <option value="VISA">VISA</option>
+              <option value="MASTER">MASTER</option>
+              <option value="AMEX">AMEX</option>
+              <option value="TARJETA">TARJETA</option>
+            </select>
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block font-semibold">{tr("cardLast4")}</span>
+            <input
+              name="last4"
+              required
+              inputMode="numeric"
+              pattern="[0-9]{4}"
+              maxLength={4}
+              placeholder={tr("cardLast4Placeholder")}
+              aria-label={tr("cardLast4")}
+              className="input w-24 font-mono"
+            />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block font-semibold">{tr("nickname")}</span>
+            <input name="nickname" placeholder={tr("nickname")} aria-label={tr("nickname")} className="input max-w-xs" />
+          </label>
+          <button className="btn">{tr("addCard")}</button>
+        </form>
       </section>
 
       <section className="card space-y-2">

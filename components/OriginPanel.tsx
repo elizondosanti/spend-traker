@@ -9,6 +9,8 @@ export type OriginRow = {
   id: string;
   href: string;
   merchant: string;
+  /** Descripción del correo; vacío = no mostrar. */
+  concept?: string | null;
   meta: string;
   amount: string;
   income: boolean;
@@ -16,6 +18,9 @@ export type OriginRow = {
 
 export type OriginDetail = {
   merchant: string;
+  /** Concepto del movimiento; si `conceptEmpty`, se muestra como estado vacío sin comillas. */
+  concept?: string | null;
+  conceptEmpty?: boolean;
   amount: string;
   income: boolean;
   kind: string;
@@ -89,6 +94,13 @@ export function OriginPanel({
             <h2 id="origin-title" className="truncate text-lg font-bold">
               {title}
             </h2>
+            {detail?.concept && (
+              <p
+                className={`mt-0.5 text-sm break-words ${detail.conceptEmpty ? "italic text-slate-500" : "font-medium text-ink"}`}
+              >
+                {detail.conceptEmpty ? detail.concept : `“${detail.concept}”`}
+              </p>
+            )}
             {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
           </div>
           <Link href={closeHref} className="btn-ghost shrink-0 px-3" aria-label={labels.close}>
@@ -132,6 +144,7 @@ export function OriginPanel({
                         <Link href={row.href} className="flex items-center justify-between gap-3 py-3 hover:opacity-80">
                           <span className="min-w-0">
                             <span className="block truncate font-semibold">{row.merchant}</span>
+                            {row.concept && <span className="block truncate text-sm text-slate-600">“{row.concept}”</span>}
                             <span className="text-xs text-slate-500">{row.meta}</span>
                           </span>
                           <span className={`num shrink-0 text-right font-semibold tabular-nums tracking-normal ${row.income ? "text-ok" : "text-ink"}`}>

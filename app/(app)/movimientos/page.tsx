@@ -6,7 +6,7 @@ import { getTransaction, listCards, listCategories, listTransactions } from "@/l
 import { costaRicaInputValue, formatDate } from "@/lib/format";
 import { translator } from "@/lib/i18n";
 import { formatSignedMoney } from "@/lib/money";
-import { movementAmount, movementFacts } from "@/lib/movement-view";
+import { movementAmount, movementConceptDisplay, movementFacts } from "@/lib/movement-view";
 import { requireUser, uiLang } from "@/lib/session";
 
 const one = (v: string | string[] | undefined) => (typeof v === "string" ? v : "");
@@ -48,6 +48,7 @@ export default async function Transactions({ searchParams }: PageProps<"/movimie
   ]);
   const options = categories.map((c) => ({ id: c.id, name: c.name, group: c.grp }));
   const groupLabels = { bills: tr("bills"), needs: tr("needs"), wants: tr("wants"), income: tr("income") };
+  const selectedConcept = selected ? movementConceptDisplay(selected, tr) : null;
 
   return (
     <div className="page">
@@ -129,49 +130,59 @@ export default async function Transactions({ searchParams }: PageProps<"/movimie
 
       <ul className="space-y-2">
         {transactions.length === 0 && <li className="card text-slate-500">{tr("noTransactions")}</li>}
-        {transactions.map((tx) => (
-          <li key={tx.id} className="card !p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <Link href={movHref(filters, tx.id)} className="min-w-0 flex-1 hover:opacity-80">
-                <p className="truncate font-semibold">{tx.merchant}</p>
-                <p className="text-sm text-slate-500">
-                  {formatDate(tx.occurred_at, lang, true)} ·{" "}
-                  <span className="rounded bg-brand-soft px-1.5 py-0.5 text-xs font-medium text-brand">{tr(tx.kind)}</span>
-                  {tx.card_last4 && (
-                    <>
-                      {" "}
-                      · {tx.card_brand} ····{tx.card_last4}
-                      {tx.card_nickname ? ` (${tx.card_nickname})` : ""}
-                    </>
+        {transactions.map((tx) => {
+          const concept = movementConceptDisplay(tx, tr);
+          return (
+            <li key={tx.id} className="card !p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <Link href={movHref(filters, tx.id)} className="min-w-0 flex-1 hover:opacity-80">
+                  <p className="truncate font-semibold">{tx.merchant}</p>
+                  {concept && (
+                    <p className={`text-sm ${concept.empty ? "italic text-slate-500" : "text-slate-600"}`}>
+                      {concept.empty ? concept.text : `“${concept.text}”`}
+                    </p>
                   )}
-                </p>
-                {tx.concept && <p className="text-sm text-slate-600">“{tx.concept}”</p>}
-              </Link>
-              <div className="shrink-0 text-right">
-                <Link
-                  href={movHref(filters, tx.id)}
-                  className={`num mb-1 block text-base font-semibold tabular-nums tracking-normal hover:opacity-80 ${tx.direction === "ingreso" ? "text-ok" : "text-ink"}`}
-                >
-                  {formatSignedMoney(tx.amount, tx.currency, tx.direction, lang)}
+                  <p className="text-sm text-slate-500">
+                    {formatDate(tx.occurred_at, lang, true)} ·{" "}
+                    <span className="rounded bg-brand-soft px-1.5 py-0.5 text-xs font-medium text-brand">{tr(tx.kind)}</span>
+                    {tx.city?.trim() ? ` · ${tx.city.trim()}` : ""}
+                    {tx.card_last4 && (
+                      <>
+                        {" "}
+                        · {tx.card_brand} ····{tx.card_last4}
+                        {tx.card_nickname ? ` (${tx.card_nickname})` : ""}
+                      </>
+                    )}
+                  </p>
                 </Link>
-                <CategoryPicker
-                  transactionId={tx.id}
-                  value={tx.category_id}
-                  options={options}
-                  groupLabels={groupLabels}
-                  label={tr("navCategories")}
-                  placeholder={tr("uncategorized")}
-                />
+                <div className="shrink-0 text-right">
+                  <Link
+                    href={movHref(filters, tx.id)}
+                    className={`num mb-1 block text-base font-semibold tabular-nums tracking-normal hover:opacity-80 ${tx.direction === "ingreso" ? "text-ok" : "text-ink"}`}
+                  >
+                    {formatSignedMoney(tx.amount, tx.currency, tx.direction, lang)}
+                  </Link>
+                  <CategoryPicker
+                    transactionId={tx.id}
+                    value={tx.category_id}
+                    options={options}
+                    groupLabels={groupLabels}
+                    label={tr("navCategories")}
+                    placeholder={tr("uncategorized")}
+                  />
+                </div>
               </div>
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
       {selected && (
         <OriginPanel
           closeHref={movHref(filters)}
           detail={{
             merchant: selected.merchant,
+            concept: selectedConcept?.text ?? null,
+            conceptEmpty: selectedConcept?.empty,
             amount: movementAmount(selected, lang),
             income: selected.direction === "ingreso",
             kind: tr(selected.kind),

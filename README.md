@@ -8,19 +8,18 @@ Spend Traker anota en el presupuesto las compras, transferencias SINPE y pagos d
 
 1. Entrá a [https://spend-traker-p5vv.vercel.app](https://spend-traker-p5vv.vercel.app).
 2. Tocá **Entrar como demo** (no hace falta crear cuenta).
-3. En **Inicio** vas a ver el mes: categorías, montos y lo que queda.
-4. Usá **Simular correo BAC** para meter un aviso de compra/SINPE/servicio sin Gmail.
-5. Revisá **Movimientos**, **Avisos** (si algo quedó sin categoría segura) y **Ajustes**.
+3. En **Inicio** vas a ver el mes: categorías, montos y lo que queda (datos sembrados).
+4. Revisá **Movimientos**, **Avisos** (si algo quedó sin categoría segura) y **Ajustes**.
 
-La cuenta demo comparte datos y se puede reiniciar desde Ajustes. No conecta Gmail.
+La cuenta demo comparte datos y se puede reiniciar desde Ajustes. No conecta Gmail. En producción no hay panel de simulación; en local podés pegar un correo BAC real en Inicio.
 
 ## Guion de demo (~3 minutos)
 
 1. **Landing (15 s)** — Mostrar marca Spend Traker y el botón de demo.
 2. **Entrar como demo (20 s)** — Entrar sin registro; banner de cuenta demo.
-3. **Inicio (60 s)** — Topes por categoría y saldo del mes. Simular un correo BAC (compra o SINPE) y mostrar cómo aparece el movimiento.
+3. **Inicio (60 s)** — Topes por categoría y saldo del mes; abrir un movimiento reciente sembrado.
 4. **Movimientos / Avisos (40 s)** — Filtrar o abrir un movimiento; si hay aviso pendiente, confirmar categoría.
-5. **Confianza Gmail (40 s)** — En Ajustes explicar: solo lectura (`gmail.readonly`), no pide la clave del banco, no envía ni borra correos. La demo no conecta Gmail; un usuario real sí.
+5. **Confianza Gmail (40 s)** — En Ajustes explicar: solo lectura (`gmail.readonly`), no pide la clave del banco, no envía ni borra correos. La demo no conecta Gmail; un usuario real sí. Tarjetas reales se agregan en Ajustes.
 6. **Tema claro/oscuro (15 s)** — Alternar tema sin romper la pantalla.
 
 ## Confianza Gmail (solo lectura)
@@ -28,7 +27,7 @@ La cuenta demo comparte datos y se puede reiniciar desde Ajustes. No conecta Gma
 - Scope: `https://www.googleapis.com/auth/gmail.readonly`.
 - La app **no** pide la clave del banco y **no** puede enviar, borrar ni modificar correos.
 - Busca avisos de `@baccredomatic.com` y `@notificacionesbaccr.com`.
-- El token de Gmail se guarda cifrado. La cuenta demo no conecta Gmail (usa simulación + datos sembrados).
+- El token de Gmail se guarda cifrado. La cuenta demo no conecta Gmail (usa datos sembrados).
 
 ## Correr en local
 

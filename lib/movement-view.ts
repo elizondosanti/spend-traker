@@ -5,12 +5,21 @@ import { formatSignedMoney } from "./money";
 
 const TRANSFER_KINDS = new Set(["sinpe", "sinpe_movil", "transferencia"]);
 
+export type ConceptDisplay = { text: string; empty: boolean };
+
 /** Concepto visible para confirmar: texto del correo, o “Sin descripción” en SINPE/transferencia. */
-export function movementConceptLabel(tx: Pick<Transaction, "kind" | "concept">, tr: (key: TKey) => string): string | null {
+export function movementConceptDisplay(
+  tx: Pick<Transaction, "kind" | "concept">,
+  tr: (key: TKey) => string,
+): ConceptDisplay | null {
   const concept = tx.concept?.trim() ?? "";
-  if (concept) return concept;
-  if (TRANSFER_KINDS.has(tx.kind)) return tr("noConcept");
+  if (concept) return { text: concept, empty: false };
+  if (TRANSFER_KINDS.has(tx.kind)) return { text: tr("noConcept"), empty: true };
   return null;
+}
+
+export function movementConceptLabel(tx: Pick<Transaction, "kind" | "concept">, tr: (key: TKey) => string): string | null {
+  return movementConceptDisplay(tx, tr)?.text ?? null;
 }
 
 export function movementFacts(tx: Transaction, lang: Lang, tr: (key: TKey) => string): { label: string; value: string }[] {
