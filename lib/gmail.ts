@@ -56,8 +56,12 @@ async function gmailGet<T>(accessToken: string, path: string): Promise<T> {
 export async function connectGmail(userId: string, code: string): Promise<void> {
   const tokens = await tokenRequest({ code, grant_type: "authorization_code", redirect_uri: redirectUri() });
   if (!tokens.refresh_token) throw new Error("Google did not return a refresh token");
-  if (tokens.scope && tokens.scope.split(" ").some((s) => s !== SCOPE)) {
-    throw new Error("Unexpected Gmail scopes granted");
+  if (tokens.scope) {
+    const scopes = tokens.scope.split(" ");
+    if (!scopes.includes(SCOPE)) throw new Error("Gmail read access was not granted");
+    if (scopes.some((scope) => /gmail\.(modify|compose|send|insert)|mail\.google\.com/.test(scope))) {
+      throw new Error("Gmail write access was granted");
+    }
   }
   const profile = await gmailGet<{ emailAddress: string }>(tokens.access_token, "/profile");
   await query(

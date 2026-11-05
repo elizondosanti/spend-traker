@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local embedded database
 /.data
+
+# generated for the editor, not part of the app
+AGENTS.md
