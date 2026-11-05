@@ -3,6 +3,7 @@ import { listCategories, listPendingReviews } from "@/lib/data";
 import { formatDate } from "@/lib/format";
 import { translator, type TKey } from "@/lib/i18n";
 import { formatSignedMoney } from "@/lib/money";
+import { movementConceptLabel } from "@/lib/movement-view";
 import { requireUser, uiLang } from "@/lib/session";
 
 export default async function Review() {
@@ -25,16 +26,32 @@ export default async function Review() {
         {reviews.map(({ id, reason, transaction: tx }) => {
           const needsConcept = reason === "sinpe_sin_concepto";
           const suggested = nameOf(tx.category_id);
+          const conceptLabel = movementConceptLabel(tx, tr);
+          const hasRealConcept = Boolean(tx.concept?.trim());
+          const place = tx.city?.trim() || "";
           return (
             <li key={id} className="card space-y-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
+                <div className="min-w-0">
                   <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
                     {tr(`reason_${reason}` as TKey)}
                   </span>
                   <p className="mt-1 font-semibold">{tx.merchant}</p>
+                  {conceptLabel && (
+                    <p className={`mt-0.5 text-sm ${hasRealConcept ? "font-medium text-ink" : "italic text-slate-500"}`}>
+                      {hasRealConcept ? (
+                        <>
+                          <span className="text-xs font-normal uppercase tracking-wide text-slate-500">{tr("concept")}: </span>
+                          “{conceptLabel}”
+                        </>
+                      ) : (
+                        conceptLabel
+                      )}
+                    </p>
+                  )}
                   <p className="text-sm text-slate-500">
                     {formatDate(tx.occurred_at, lang, true)} · {tr(tx.kind)} · {tr(tx.direction)}
+                    {place ? ` · ${place}` : ""}
                     {tx.card_last4 ? ` · ${tx.card_brand} ····${tx.card_last4}` : ""}
                   </p>
                 </div>
