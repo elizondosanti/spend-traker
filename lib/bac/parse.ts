@@ -1,4 +1,5 @@
 import { parseAmount, parseCurrency, type Currency } from "../money";
+import { normalizeKey } from "../text";
 
 export type Kind = "compra" | "sinpe" | "servicio";
 export type Direction = "gasto" | "ingreso";
@@ -89,7 +90,7 @@ function parseSinpe(text: string): ParsedEmail | null {
   const incoming = flat.match(/comunica que\s+(.+?)\s+realiz[oó] una transferencia.*?a su cuenta(?: N[°º.o]*)?\s*\*+\s*(\d{3,4})/i);
   const outgoing = flat.match(/(?:usted|se) realiz[oó] una transferencia.*?(?:a la cuenta de|a favor de|a)\s+(.+?)(?:\.|,| por un monto)/i);
   const conceptMatch = text.match(/por concepto de:?\s*\n?\s*([^\n]*?)\s*(?:\n|$)/i);
-  let concept = (conceptMatch?.[1] ?? "").replace(/\s*El n[uú]mero de referencia.*$/i, "").trim();
+  let concept = (conceptMatch?.[1] ?? "").replace(/\s*El n[uú]mero de referencia.*$/i, "").replace(/^[\s_]+|[\s_]+$/g, "").trim();
   if (/^sin descripci[oó]n$/i.test(concept) || /^el n[uú]mero de referencia/i.test(concept)) concept = "";
   const ref = flat.match(/n[uú]mero de referencia es\s*(\d+)/i)?.[1] ?? "";
   return {
@@ -146,6 +147,84 @@ export function parseBacEmail(text: string): ParsedEmail | null {
   } catch {
     return null;
   }
+}
+
+const NAME_STOP = new Set(["de", "del", "la", "las", "los", "y", "da", "do", "das", "dos"]);
+
+function nameTokens(value: string): string[] {
+  return normalizeKey(value)
+    .split(" ")
+    .filter((token) => token.length > 2 && !NAME_STOP.has(token));
+}
+
+/** True when two names share at least a given name and a surname. Case and accents do not matter. */
+export function samePerson(a: string, b: string): boolean {
+  const left = nameTokens(a);
+  const right = nameTokens(b);
+  if (left.length < 2 || right.length < 2) return false;
+  const shared = left.filter((token) => right.includes(token));
+  return shared.length >= 2;
+}
+
+export function sinpeParties(text: string): { greeted: string; actor: string } {
+  const flat = text.replace(/\s+/g, " ");
+  return {
+    greeted: flat.match(/estimado\(a\)\s+(.+?)\s*:/i)?.[1]?.trim() ?? "",
+    actor: flat.match(/comunica que\s+(.+?)\s+realiz[oó] una transferencia/i)?.[1]?.trim() ?? "",
+  };
+}
+
+/** How well a name fits an email address, e.g. "Santiago Elizondo" inside elizondosanti0@gmail.com. */
+export function scoreNameAgainstEmail(name: string, email: string): number {
+  const local = normalizeKey(email.split("@")[0] ?? "").replace(/[0-9]/g, "");
+  if (local.length < 4) return 0;
+  let score = 0;
+  for (const token of nameTokens(name)) {
+    if (token.length < 4) continue;
+    if (local.includes(token)) score += 2;
+    else if (local.includes(token.slice(0, 4))) score += 1;
+  }
+  return score;
+}
+
+function addressesIn(text: string): string[] {
+  return text.match(/[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi) ?? [];
+}
+
+/** The name in the notice that best matches the mailbox. Null when the two names are too close to call. */
+export function holderFromMailbox(text: string, emails: string[]): string | null {
+  const { greeted, actor } = sinpeParties(text);
+  const pool = [...emails, ...addressesIn(text)];
+  let best = "";
+  let bestScore = 0;
+  let second = 0;
+  for (const name of [actor, greeted]) {
+    if (!name) continue;
+    const score = pool.reduce((max, email) => Math.max(max, scoreNameAgainstEmail(name, email)), 0);
+    if (score > bestScore) {
+      second = bestScore;
+      best = name;
+      bestScore = score;
+    } else if (score > second) second = score;
+  }
+  // One shared surname is not enough: "demo" must not turn "Empresa Demo" into the account holder.
+  return bestScore >= 3 && bestScore > second ? best : null;
+}
+
+/**
+ * BAC writes the notice to whoever receives the money.
+ * If the account holder is the person who "realizó" the transfer, they spent.
+ * If the notice is addressed to them ("Estimado …"), they received it.
+ * The holder can come from the name they typed, or from the mailbox when the notice already contains it.
+ */
+export function directionForHolder(text: string, holderName: string, emails: string[] = []): Direction | null {
+  const { greeted, actor } = sinpeParties(text);
+  const mailboxHolder = holderFromMailbox(text, emails);
+  const isHolder = (party: string) =>
+    Boolean(party) && (samePerson(holderName, party) || (mailboxHolder !== null && samePerson(mailboxHolder, party)));
+  if (isHolder(actor)) return "gasto";
+  if (isHolder(greeted)) return "ingreso";
+  return null;
 }
 
 export const BAC_DOMAINS = ["baccredomatic.com", "notificacionesbaccr.com"];

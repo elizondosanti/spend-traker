@@ -5,7 +5,7 @@ import { archiveCategoryAction, createCategoryAction, finishOnboardingAction, se
 import { GmailCard } from "@/components/GmailCard";
 import { GROUPS } from "@/lib/categories";
 import { getGmailConnection, listCategories } from "@/lib/data";
-import { gmailConfigured } from "@/lib/gmail";
+import { appUrl, gmailConfigured } from "@/lib/gmail";
 import { translator } from "@/lib/i18n";
 import { requireUser, uiLang } from "@/lib/session";
 
@@ -60,6 +60,7 @@ export default async function Onboarding({ searchParams }: PageProps<"/bienvenid
                 connection={await getGmailConnection(user.id)}
                 configured={gmailConfigured()}
                 isDemo={user.is_demo}
+                inboundUrl={user.is_demo ? undefined : `${appUrl()}/api/inbound/${user.inbound_token}`}
               />
               <form action={finishOnboardingAction}>
                 <button className="btn w-full">{tr("finish")}</button>

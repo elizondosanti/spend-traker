@@ -37,7 +37,7 @@ export const SEED_CATEGORIES: Seed[] = [
   },
   {
     slug: "fuel", es: "Combustible", en: "Fuel", grp: "needs", budget: 50000,
-    keywords: ["delta", "gasolinera", "servicentro", "puma", "estacion de servicio", "gas station", "combustible"],
+    keywords: ["delta", "gasolina", "gasolinera", "servicentro", "puma", "estacion de servicio", "gas station", "combustible"],
     placeTypes: ["gas_station"],
   },
   {

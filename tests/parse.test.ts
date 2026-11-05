@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isBacSender, parseBacDate, parseBacEmail } from "@/lib/bac/parse";
+import { directionForHolder, isBacSender, parseBacDate, parseBacEmail, samePerson } from "@/lib/bac/parse";
 import { SAMPLE_EMAILS } from "@/lib/bac/samples";
 import { parseAmount } from "@/lib/money";
 import { htmlToText, normalizeKey } from "@/lib/text";
@@ -94,6 +94,21 @@ describe("helpers", () => {
     expect(isBacSender("comprobante_cri@baccredomatic.com")).toBe(true);
     expect(isBacSender("bac@baccredomatic.com.evil.io")).toBe(false);
     expect(isBacSender("alerta@fake-baccredomatic.com")).toBe(false);
+  });
+
+  it("treats a SINPE I sent as a gasto, and one addressed to me as an ingreso", () => {
+    const sent = `Estimado(a) Tomas Solano :
+BAC Credomatic le comunica que SANTIAGO ELIZONDO BELLO realizó una transferencia electrónica a su cuenta N° *****7437.
+La transferencia se realizó el día 04-11-2026 a las 19:57:28 horas; por un monto de 3,00 CRC , por concepto de:
+Gasolina_______
+El número de referencia es 2026110410284000607997209`;
+    expect(samePerson("Santiago Elizondo", "SANTIAGO ELIZONDO BELLO")).toBe(true);
+    expect(directionForHolder(sent, "Santiago Elizondo")).toBe("gasto");
+    expect(parseBacEmail(sent)?.concept).toBe("Gasolina");
+    const received = sent.replace("Tomas Solano", "Santiago Elizondo Bello").replace("SANTIAGO ELIZONDO BELLO", "ANA MORA SOLANO");
+    expect(directionForHolder(received, "Santiago Elizondo")).toBe("ingreso");
+    expect(directionForHolder(sent, "", ["elizondosanti0@gmail.com"])).toBe("gasto");
+    expect(directionForHolder(received, "", ["elizondosanti0@gmail.com"])).toBe("ingreso");
   });
 
   it("normalizes memory keys", () => {

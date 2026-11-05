@@ -1,8 +1,11 @@
 import { resetDemoAction, updateCardAction, updateSettingsAction } from "@/app/actions";
 import { GmailCard } from "@/components/GmailCard";
+import { PasswordForm } from "@/components/PasswordForm";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { LangToggle } from "@/components/LangToggle";
 import { getGmailConnection, listCards, memoryStats } from "@/lib/data";
 import { appUrl, gmailConfigured } from "@/lib/gmail";
+import { cookieTheme } from "@/lib/session";
 import { translator } from "@/lib/i18n";
 import { requireUser, uiLang } from "@/lib/session";
 
@@ -28,8 +31,17 @@ export default async function Settings({ searchParams }: PageProps<"/ajustes">) 
         <div>
           <h2 className="mb-2 font-semibold">{tr("language")}</h2>
           <LangToggle lang={lang} tone="light" />
+          <div className="mt-3">
+            <p className="mb-1 text-sm font-semibold">{tr("theme")}</p>
+            <ThemeToggle theme={await cookieTheme()} tone="light" />
+          </div>
         </div>
         <form action={updateSettingsAction} className="space-y-2">
+          <label className="block text-sm">
+            <span className="mb-1 block font-semibold">{tr("name")}</span>
+            <input name="name" required defaultValue={user.name} autoComplete="name" className="input" />
+            <span className="mt-1 block text-xs text-slate-500">{tr("nameHelp")}</span>
+          </label>
           <label className="block text-sm">
             <span className="mb-1 block font-semibold">{tr("fxRate")}</span>
             <input name="fx_rate" type="number" step="any" min={1} defaultValue={user.fx_rate} className="input" />
@@ -82,6 +94,13 @@ export default async function Settings({ searchParams }: PageProps<"/ajustes">) 
           <p className="text-sm text-slate-600">{tr("aiCost")}</p>
         </div>
       </section>
+
+      {!user.is_demo && (
+        <section className="card">
+          <h2 className="mb-3 font-semibold">{tr("password")}</h2>
+          <PasswordForm labels={{ current: tr("currentPassword"), next: tr("newPassword"), save: tr("save") }} />
+        </section>
+      )}
 
       {user.is_demo && (
         <form action={resetDemoAction}>

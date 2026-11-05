@@ -16,7 +16,7 @@ export type Card = { id: string; brand: string; last4: string; nickname: string 
 
 export type Transaction = {
   id: string;
-  kind: "compra" | "sinpe" | "servicio";
+  kind: "compra" | "sinpe" | "servicio" | "efectivo" | "sinpe_movil" | "transferencia";
   direction: "gasto" | "ingreso";
   merchant: string;
   concept: string;
@@ -62,9 +62,22 @@ const TX_SELECT = `SELECT t.id, t.kind, t.direction, t.merchant, t.concept, t.ci
   c.brand AS card_brand, c.last4 AS card_last4, c.nickname AS card_nickname
   FROM transactions t LEFT JOIN cards c ON c.id = t.card_id`;
 
+export async function getTransaction(userId: string, id: string): Promise<Transaction | null> {
+  return queryOne<Transaction>(`${TX_SELECT} WHERE t.user_id = $1 AND t.id = $2`, [userId, id]);
+}
+
 export async function listTransactions(
   userId: string,
-  filters: { q?: string; cardId?: string; kind?: string; month?: string; limit?: number } = {},
+  filters: {
+    q?: string;
+    cardId?: string;
+    kind?: string;
+    direction?: string;
+    month?: string;
+    sort?: string;
+    fxRate?: number;
+    limit?: number;
+  } = {},
 ): Promise<Transaction[]> {
   const where = ["t.user_id = $1"];
   const params: unknown[] = [userId];
@@ -80,16 +93,24 @@ export async function listTransactions(
     params.push(filters.kind);
     where.push(`t.kind = $${params.length}`);
   }
+  if (filters.direction === "gasto" || filters.direction === "ingreso") {
+    params.push(filters.direction);
+    where.push(`t.direction = $${params.length}`);
+  }
   if (filters.month) {
     const [start, end] = monthRange(filters.month);
     params.push(start, end);
     where.push(`t.occurred_at >= $${params.length - 1} AND t.occurred_at < $${params.length}`);
   }
+  let order = "t.occurred_at DESC, t.created_at DESC";
+  if (filters.sort === "oldest") order = "t.occurred_at ASC, t.created_at ASC";
+  if (filters.sort === "amount_desc" || filters.sort === "amount_asc") {
+    params.push(filters.fxRate && filters.fxRate > 0 ? filters.fxRate : 505);
+    const money = `CASE WHEN t.currency = 'USD' THEN t.amount * $${params.length} ELSE t.amount END`;
+    order = `${money} ${filters.sort === "amount_asc" ? "ASC" : "DESC"}, t.occurred_at DESC`;
+  }
   params.push(filters.limit ?? 200);
-  return query<Transaction>(
-    `${TX_SELECT} WHERE ${where.join(" AND ")} ORDER BY t.occurred_at DESC, t.created_at DESC LIMIT $${params.length}`,
-    params,
-  );
+  return query<Transaction>(`${TX_SELECT} WHERE ${where.join(" AND ")} ORDER BY ${order} LIMIT $${params.length}`, params);
 }
 
 export type CategorySummary = Category & { spent: number };

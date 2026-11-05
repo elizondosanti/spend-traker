@@ -7,7 +7,7 @@ import { htmlToText } from "@/lib/text";
 const MAX_BYTES = 200_000;
 
 /**
- * Plan B for people who don't want to connect Gmail: forward BAC emails here.
+ * Make (or any forwarder) posts BAC emails here. The app parses and classifies them.
  * Accepts JSON { from, subject, text, html } or the raw email text.
  */
 export async function POST(request: NextRequest, { params }: RouteContext<"/api/inbound/[token]">) {

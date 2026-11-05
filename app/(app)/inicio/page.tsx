@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { after } from "next/server";
 import { BudgetBar } from "@/components/BudgetBar";
+import { OriginPanel } from "@/components/OriginPanel";
 import { SimulatePanel, SyncButton } from "@/components/SimulatePanel";
 import { SAMPLE_EMAILS } from "@/lib/bac/samples";
 import { countPendingReviews, currentMonth, getGmailConnection, listTransactions, monthSummary } from "@/lib/data";
@@ -8,17 +9,31 @@ import { formatDate, formatMonth, shiftMonth } from "@/lib/format";
 import { syncGmailIfStale } from "@/lib/gmail";
 import { translator } from "@/lib/i18n";
 import { formatMoney } from "@/lib/money";
+import { movementAmount, movementFacts, movementMeta } from "@/lib/movement-view";
 import { requireUser, uiLang } from "@/lib/session";
+
+const one = (value: string | string[] | undefined) => (typeof value === "string" ? value : "");
+
+function inicioHref(month: string, cat?: string, mov?: string) {
+  const params = new URLSearchParams({ mes: month });
+  if (cat) params.set("cat", cat);
+  if (mov) params.set("mov", mov);
+  return `/inicio?${params.toString()}`;
+}
+
 export default async function Home({ searchParams }: PageProps<"/inicio">) {
   const user = await requireUser();
   const lang = await uiLang(user);
   const tr = translator(lang);
-  const { mes } = await searchParams;
-  const month = typeof mes === "string" && /^\d{4}-\d{2}$/.test(mes) ? mes : currentMonth();
+  const params = await searchParams;
+  const mes = one(params.mes);
+  const catId = one(params.cat);
+  const movId = one(params.mov);
+  const month = /^\d{4}-\d{2}$/.test(mes) ? mes : currentMonth();
 
-  const [summary, recent, pending, gmail] = await Promise.all([
+  const [summary, monthTxs, pending, gmail] = await Promise.all([
     monthSummary(user.id, month, user.fx_rate),
-    listTransactions(user.id, { month, limit: 6 }),
+    listTransactions(user.id, { month, limit: 5000 }),
     countPendingReviews(user.id),
     getGmailConnection(user.id),
   ]);
@@ -26,12 +41,20 @@ export default async function Home({ searchParams }: PageProps<"/inicio">) {
   // Vercel Hobby crons run daily, so opening the app also checks Gmail in the background.
   if (gmail) after(() => syncGmailIfStale(user.id));
 
-  const left = { CRC: summary.budget.CRC - summary.spent.CRC, USD: summary.budget.USD - summary.spent.USD };
+  const recent = monthTxs.slice(0, 6);
+  const category = summary.categories.find((c) => c.id === catId) ?? null;
+  const categoryTxs = category ? monthTxs.filter((tx) => tx.category_id === category.id && tx.direction === "gasto") : [];
+  const selectedTx = monthTxs.find((tx) => tx.id === movId) ?? null;
+  const detailTx =
+    selectedTx && category ? (selectedTx.category_id === category.id && selectedTx.direction === "gasto" ? selectedTx : null) : selectedTx;
+  const closeHref = inicioHref(month);
   const money = (n: number, c: "CRC" | "USD") => formatMoney(n, c, lang);
-  const groups = (["bills", "needs", "wants"] as const).map((g) => {
-    const cats = summary.categories.filter((c) => c.grp === g);
-    return { g, cats };
-  });
+  const left = { CRC: summary.budget.CRC - summary.spent.CRC, USD: summary.budget.USD - summary.spent.USD };
+  const groups = (["bills", "needs", "wants"] as const).map((g) => ({
+    g,
+    cats: summary.categories.filter((c) => c.grp === g),
+  }));
+  const expenseCount = (id: string) => monthTxs.filter((tx) => tx.category_id === id && tx.direction === "gasto").length;
 
   return (
     <div className="space-y-6">
@@ -42,6 +65,14 @@ export default async function Home({ searchParams }: PageProps<"/inicio">) {
         <h1 className="text-xl font-bold">{formatMonth(month, lang)}</h1>
         <Link href={`/inicio?mes=${shiftMonth(month, 1)}`} className="btn-ghost px-3" aria-label="→">
           →
+        </Link>
+      </div>
+      <div className="flex flex-wrap justify-end gap-2">
+        <Link href="/movimientos#agregar" className="btn">
+          {tr("addExpense")}
+        </Link>
+        <Link href="/movimientos#ingreso" className="btn">
+          {tr("addIncome")}
         </Link>
       </div>
 
@@ -81,23 +112,39 @@ export default async function Home({ searchParams }: PageProps<"/inicio">) {
                     {money(spent, "CRC")} {tr("of")} {money(budget, "CRC")}
                   </span>
                 </div>
-                <ul className="space-y-3">
+                <ul className="space-y-1">
                   {cats.map((c) => {
                     const remaining = c.budget - c.spent;
+                    const count = expenseCount(c.id);
+                    const open = category?.id === c.id && !detailTx;
                     return (
                       <li key={c.id}>
-                        <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
-                          <span className="font-medium">{c.name}</span>
-                          <span className={remaining < 0 ? "font-semibold text-bad" : "text-slate-600"}>
-                            {money(c.spent, c.currency)} / {c.budget > 0 ? money(c.budget, c.currency) : tr("noBudget")}
-                          </span>
-                        </div>
-                        {c.budget > 0 && <BudgetBar spent={c.spent} budget={c.budget} label={c.name} />}
-                        {c.budget > 0 && (
-                          <p className={`mt-1 text-xs ${remaining < 0 ? "text-bad" : "text-slate-500"}`}>
-                            {money(Math.abs(remaining), c.currency)} {remaining < 0 ? tr("over") : tr("left")}
-                          </p>
-                        )}
+                        <Link
+                          href={open ? closeHref : inicioHref(month, c.id)}
+                          aria-current={category?.id === c.id ? "true" : undefined}
+                          className={`block rounded-xl px-2 py-2 hover:bg-brand-soft ${category?.id === c.id ? "bg-brand-soft" : ""}`}
+                        >
+                          <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
+                            <span className="min-w-0">
+                              <span className="block font-medium">{c.name}</span>
+                              <span className="text-xs text-slate-500">
+                                {count} {count === 1 ? tr("movement") : tr("movements")}
+                              </span>
+                            </span>
+                            <span className={`shrink-0 text-right ${remaining < 0 ? "font-semibold text-bad" : "text-slate-600"}`}>
+                              {money(c.spent, c.currency)} / {c.budget > 0 ? money(c.budget, c.currency) : tr("noBudget")}
+                              <span aria-hidden className="ml-1">
+                                ›
+                              </span>
+                            </span>
+                          </div>
+                          {c.budget > 0 && <BudgetBar spent={c.spent} budget={c.budget} label={c.name} />}
+                          {c.budget > 0 && (
+                            <p className={`mt-1 text-xs ${remaining < 0 ? "text-bad" : "text-slate-500"}`}>
+                              {money(Math.abs(remaining), c.currency)} {remaining < 0 ? tr("over") : tr("left")}
+                            </p>
+                          )}
+                        </Link>
                       </li>
                     );
                   })}
@@ -108,10 +155,12 @@ export default async function Home({ searchParams }: PageProps<"/inicio">) {
         </section>
 
         <aside className="space-y-4">
+          {process.env.VERCEL ? null : (
           <SimulatePanel
             samples={SAMPLE_EMAILS.map(({ id, label }) => ({ id, label }))}
             labels={{ title: tr("simulateTitle"), help: tr("simulateHelp"), button: tr("simulateButton"), paste: tr("pasteEmail") }}
           />
+          )}
           {gmail && (
             <div className="card space-y-2">
               <p className="text-sm text-slate-600">
@@ -132,24 +181,79 @@ export default async function Home({ searchParams }: PageProps<"/inicio">) {
             <ul className="divide-y divide-slate-100">
               {recent.length === 0 && <li className="py-2 text-sm text-slate-500">{tr("noTransactions")}</li>}
               {recent.map((tx) => (
-                <li key={tx.id} className="flex items-center justify-between gap-2 py-2 text-sm">
-                  <span className="min-w-0">
-                    <span className="block truncate font-medium">{tx.merchant}</span>
-                    <span className="text-xs text-slate-500">
-                      {formatDate(tx.occurred_at, lang)} · {tr(tx.kind)}
-                      {tx.card_last4 ? ` · ${tx.card_brand} ${tx.card_last4}` : ""}
+                <li key={tx.id}>
+                  <Link href={inicioHref(month, undefined, tx.id)} className="flex items-center justify-between gap-2 py-2 text-sm hover:opacity-80">
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium">{tx.merchant}</span>
+                      <span className="text-xs text-slate-500">
+                        {formatDate(tx.occurred_at, lang)} · {tr(tx.kind)}
+                        {tx.card_last4 ? ` · ${tx.card_brand} ${tx.card_last4}` : ""}
+                      </span>
                     </span>
-                  </span>
-                  <span className={`shrink-0 font-semibold ${tx.direction === "ingreso" ? "text-ok" : ""}`}>
-                    {tx.direction === "ingreso" ? "+" : "−"}
-                    {money(tx.amount, tx.currency)}
-                  </span>
+                    <span className={`shrink-0 font-semibold ${tx.direction === "ingreso" ? "text-ok" : ""}`}>
+                      {tx.direction === "ingreso" ? "+" : "−"}
+                      {money(tx.amount, tx.currency)}
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
         </aside>
       </div>
+
+      {(category || detailTx) && (
+        <OriginPanel
+          closeHref={closeHref}
+          backHref={category && detailTx ? inicioHref(month, category.id) : undefined}
+          category={
+            category
+              ? {
+                  name: category.name,
+                  group: tr(category.grp),
+                  spent: category.spent,
+                  budget: category.budget,
+                  total: money(category.spent, category.currency),
+                  count: categoryTxs.length,
+                }
+              : undefined
+          }
+          rows={categoryTxs.map((tx) => ({
+            id: tx.id,
+            href: inicioHref(month, category?.id, tx.id),
+            merchant: tx.merchant,
+            meta: movementMeta(tx, lang, tr),
+            amount: movementAmount(tx, lang),
+            income: tx.direction === "ingreso",
+          }))}
+          detail={
+            detailTx
+              ? {
+                  merchant: detailTx.merchant,
+                  amount: movementAmount(detailTx, lang),
+                  income: detailTx.direction === "ingreso",
+                  kind: tr(detailTx.kind),
+                  rows: [
+                    {
+                      label: tr("category"),
+                      value: summary.categories.find((c) => c.id === detailTx.category_id)?.name ?? tr("uncategorized"),
+                    },
+                    ...movementFacts(detailTx, lang, tr),
+                  ],
+                }
+              : undefined
+          }
+          labels={{
+            breakdown: tr("breakdown"),
+            help: tr("breakdownHelp"),
+            empty: tr("breakdownEmpty"),
+            close: tr("close"),
+            back: tr("backToBreakdown"),
+            total: tr("total"),
+            details: tr("details"),
+          }}
+        />
+      )}
     </div>
   );
 }

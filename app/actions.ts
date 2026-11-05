@@ -10,7 +10,9 @@ import { ensureDemoUser, resetDemo } from "@/lib/demo";
 import { disconnectGmail, syncGmail } from "@/lib/gmail";
 import { t, type Lang } from "@/lib/i18n";
 import { ingestEmail, learn } from "@/lib/ingest";
-import { cookieLang, currentUser, endSession, requireUser, setCookieLang, startSession, uiLang } from "@/lib/session";
+import { cookieLang, currentUser, endSession, requireUser, setCookieLang, setCookieTheme, startSession, uiLang, type Theme } from "@/lib/session";
+import { parseAmount } from "@/lib/money";
+import { parseCostaRicaInput } from "@/lib/format";
 import { createUser } from "@/lib/users";
 
 export type FormState = { error?: string; message?: string } | undefined;
@@ -79,6 +81,25 @@ export async function setLangAction(form: FormData): Promise<void> {
   revalidatePath("/", "layout");
 }
 
+export async function setThemeAction(form: FormData): Promise<void> {
+  const theme: Theme = str(form, "theme") === "dark" ? "dark" : "light";
+  await setCookieTheme(theme);
+  const back = str(form, "redirectTo");
+  if (back.startsWith("/")) redirect(back);
+  revalidatePath("/", "layout");
+}
+
+export async function changePasswordAction(_: FormState, form: FormData): Promise<FormState> {
+  const lang = await cookieLang();
+  const user = await requireUser();
+  const row = await queryOne<{ password_hash: string | null }>("SELECT password_hash FROM users WHERE id = $1", [user.id]);
+  if (!verifyPassword(str(form, "current"), row?.password_hash ?? null)) return { error: t(lang, "invalidLogin") };
+  const next = str(form, "next");
+  if (next.length < 8) return { error: t(lang, "passwordShort") };
+  await query("UPDATE users SET password_hash = $1 WHERE id = $2", [hashPassword(next), user.id]);
+  return { message: t(lang, "passwordChanged") };
+}
+
 // ---- Onboarding & settings ----
 
 export async function finishOnboardingAction(): Promise<void> {
@@ -90,7 +111,9 @@ export async function finishOnboardingAction(): Promise<void> {
 export async function updateSettingsAction(form: FormData): Promise<void> {
   const user = await requireUser();
   const fx = Number(str(form, "fx_rate").replace(",", "."));
+  const name = str(form, "name").replace(/\s+/g, " ").trim().slice(0, 80);
   if (fx > 0 && fx < 10000) await query("UPDATE users SET fx_rate = $1 WHERE id = $2", [fx, user.id]);
+  if (name) await query("UPDATE users SET name = $1 WHERE id = $2", [name, user.id]);
   revalidateApp();
 }
 
@@ -141,6 +164,60 @@ export async function simulateAction(_: FormState, form: FormData): Promise<Form
   const lang = await uiLang(user);
   const src = t(lang, `src_${result.classification.source}` as Parameters<typeof t>[1]);
   return { message: `${tx?.merchant} → ${tx?.name ?? t(lang, "uncategorized")} · ${src}` };
+}
+
+export async function addExpenseAction(_: FormState, form: FormData): Promise<FormState> {
+  const user = await requireUser();
+  const lang = await uiLang(user);
+  const merchant = str(form, "merchant").slice(0, 80);
+  if (!merchant) return { error: t(lang, "expenseNeedName") };
+
+  let amount = Number.NaN;
+  try {
+    amount = parseAmount(str(form, "amount"));
+  } catch {
+    amount = Number.NaN;
+  }
+  if (!Number.isFinite(amount) || amount <= 0) return { error: t(lang, "expenseNeedAmount") };
+
+  const rawWhen = str(form, "occurred");
+  const occurred = rawWhen ? parseCostaRicaInput(rawWhen) : new Date();
+  if (!occurred || occurred.getTime() > Date.now() + 24 * 3600_000) return { error: t(lang, "expenseBadDate") };
+
+  const direction = str(form, "direction") === "ingreso" ? "ingreso" : "gasto";
+  const categoryId = str(form, "categoryId");
+  const category = categoryId
+    ? await queryOne<{ id: string }>("SELECT id FROM categories WHERE id = $1 AND user_id = $2 AND archived = false", [categoryId, user.id])
+    : null;
+  const payment = str(form, "payment");
+  const card = payment && !["efectivo", "sinpe_movil", "transferencia"].includes(payment)
+    ? await queryOne<{ id: string }>("SELECT id FROM cards WHERE id = $1 AND user_id = $2", [payment, user.id])
+    : null;
+  const kind = card ? "compra" : payment === "sinpe_movil" ? "sinpe_movil" : payment === "transferencia" ? "transferencia" : "efectivo";
+
+  const id = newId();
+  await query(
+    `INSERT INTO transactions
+      (id, user_id, kind, direction, merchant, concept, city, amount, currency, occurred_at, card_id,
+       category_id, source, confidence, tokens, cost_usd, gmail_id, bac_ref, dedupe_key)
+     VALUES ($1,$2,$3,$4,$5,'','',$6,$7,$8,$9,$10,'manual',1,0,0,NULL,'',$11)`,
+    [
+      id,
+      user.id,
+      kind,
+      direction,
+      merchant,
+      amount,
+      asCurrency(str(form, "currency")),
+      occurred.toISOString(),
+      card?.id ?? null,
+      category?.id ?? null,
+      `manual:${id}`,
+    ],
+  );
+  if (category) await learn(user.id, id, category.id);
+  revalidateApp();
+  return { message: t(lang, direction === "ingreso" ? "incomeSaved" : "expenseSaved") };
 }
 
 async function findOrCreateCategory(userId: string, form: FormData, direction: string): Promise<string | null> {

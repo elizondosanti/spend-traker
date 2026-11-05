@@ -3,18 +3,21 @@ import { redirect } from "next/navigation";
 import { AuthForms } from "@/components/AuthForms";
 import { LangToggle } from "@/components/LangToggle";
 import { translator } from "@/lib/i18n";
-import { currentUser, uiLang } from "@/lib/session";
+import { cookieTheme, currentUser, uiLang } from "@/lib/session";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { demoAction } from "./actions";
 
 export default async function Landing() {
   const user = await currentUser();
   if (user) redirect(user.onboarded ? "/inicio" : "/bienvenida");
   const lang = await uiLang();
+  const theme = await cookieTheme();
   const tr = translator(lang);
 
   return (
     <main className="flex flex-1 flex-col bg-brand text-white">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-end px-5 pt-5">
+        <ThemeToggle theme={theme} redirectTo="/" />
         <LangToggle lang={lang} redirectTo="/" />
       </header>
       <div className="mx-auto grid w-full max-w-5xl flex-1 items-center gap-10 px-5 py-10 md:grid-cols-2">
@@ -28,7 +31,7 @@ export default async function Landing() {
             <li>✓ {tr("trust3")}</li>
           </ul>
         </section>
-        <section className="rounded-2xl bg-white p-6 text-ink shadow-xl">
+        <section className="theme-surface p-6 text-ink">
           <form action={demoAction}>
             <button className="btn w-full bg-ink py-3 text-base hover:bg-black">{tr("tryDemo")}</button>
           </form>
@@ -38,6 +41,7 @@ export default async function Landing() {
               login: tr("login"),
               register: tr("register"),
               name: tr("name"),
+              nameHelp: tr("nameHelp"),
               email: tr("email"),
               password: tr("password"),
             }}

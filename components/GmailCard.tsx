@@ -28,11 +28,13 @@ export function GmailCard({
   connection,
   configured,
   isDemo,
+  inboundUrl,
 }: {
   lang: Lang;
   connection: GmailConnection | null;
   configured: boolean;
   isDemo: boolean;
+  inboundUrl?: string;
 }) {
   const tr = translator(lang);
   return (
@@ -60,7 +62,22 @@ export function GmailCard({
           {tr("gmailConnect")}
         </a>
       ) : (
-        <p className="text-sm text-warn">{tr("gmailNotConfigured")}</p>
+        <div className="space-y-3">
+          <p className="text-sm text-warn">{tr("gmailNotConfigured")}</p>
+          {inboundUrl && (
+            <div className="space-y-2 text-sm">
+              <h3 className="font-semibold">{tr("makeTitle")}</h3>
+              <p className="text-slate-600">{tr("makeHelp")}</p>
+              <ol className="list-decimal space-y-1 pl-5">
+                <li>{tr("makeStep1")}</li>
+                <li>{tr("makeStep2")}</li>
+                <li>{tr("makeStep3")}</li>
+              </ol>
+              <code className="block overflow-x-auto rounded-lg bg-slate-100 p-3 text-xs">POST {inboundUrl}</code>
+              <p className="text-xs text-slate-500">{tr("makeNote")}</p>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

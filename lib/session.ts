@@ -6,6 +6,7 @@ import { getUserById, type User } from "./users";
 
 const SESSION_COOKIE = "st_session";
 const LANG_COOKIE = "st_lang";
+const THEME_COOKIE = "st_theme";
 
 export async function startSession(userId: string): Promise<void> {
   (await cookies()).set(SESSION_COOKIE, sign(userId), {
@@ -45,4 +46,14 @@ export async function uiLang(user?: User | null): Promise<Lang> {
 
 export async function setCookieLang(lang: Lang): Promise<void> {
   (await cookies()).set(LANG_COOKIE, lang, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+}
+
+export type Theme = "light" | "dark";
+
+export async function cookieTheme(): Promise<Theme> {
+  return (await cookies()).get(THEME_COOKIE)?.value === "dark" ? "dark" : "light";
+}
+
+export async function setCookieTheme(theme: Theme): Promise<void> {
+  (await cookies()).set(THEME_COOKIE, theme, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
 }

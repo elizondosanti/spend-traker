@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
-import { parseBacEmail, type ParsedEmail } from "./bac/parse";
+import { directionForHolder, holderFromMailbox, parseBacEmail, samePerson, sinpeParties, type ParsedEmail } from "./bac/parse";
 import { matchKeywords, matchPlaceTypes } from "./categories";
 import { newId, query, queryOne } from "./db";
 import { classifyWithLlm, extractWithLlm } from "./llm";
 import { lookupPlace } from "./places";
 import { normalizeKey } from "./text";
+import { getUserById } from "./users";
 
 export type Source = "memoria" | "reglas" | "places" | "llm" | "manual" | "pendiente";
 
@@ -121,6 +122,25 @@ export async function ingestEmail(input: {
     parsed = rest;
     parsedWith = "llm";
     extractionUsage = { tokens, costUsd };
+  }
+
+  if (parsed.kind === "sinpe") {
+    const user = await getUserById(input.userId);
+    const gmail = await queryOne<{ email: string }>("SELECT email FROM gmail_connections WHERE user_id = $1", [input.userId]);
+    const emails = [user?.email, gmail?.email].filter((email): email is string => Boolean(email));
+    const direction = directionForHolder(input.text, user?.name ?? "", emails);
+    if (direction) {
+      const { greeted, actor } = sinpeParties(input.text);
+      const other = direction === "gasto" ? greeted : actor;
+      parsed = { ...parsed, direction, merchant: other || parsed.merchant };
+    }
+    const learned = holderFromMailbox(input.text, emails);
+    const known = user?.name ?? "";
+    const learnedTokens = learned ? learned.split(/\s+/).filter((part) => part.length > 2).length : 0;
+    const knownTokens = known.split(/\s+/).filter((part) => part.length > 2).length;
+    if (learned && user && !user.is_demo && learnedTokens >= 2 && (knownTokens < 2 || (samePerson(known, learned) && learnedTokens > knownTokens))) {
+      await query("UPDATE users SET name = $1 WHERE id = $2", [learned, user.id]);
+    }
   }
 
   if (input.simulate) {

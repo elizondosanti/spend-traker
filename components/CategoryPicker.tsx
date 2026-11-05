@@ -31,7 +31,7 @@ export function CategoryPicker({
         aria-label={label}
         defaultValue={value ?? ""}
         onChange={() => formRef.current?.requestSubmit()}
-        className="w-full max-w-[13rem] rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
+        className="input max-w-[13rem] px-2 py-1 text-sm"
       >
         {!value && <option value="">{placeholder}</option>}
         {groups.map((g) => (
