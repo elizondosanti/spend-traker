@@ -77,8 +77,8 @@ export function OriginPanel({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <Link href={closeHref} className="absolute inset-0 bg-black/40" aria-label={labels.close} />
-      <aside ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="origin-title" className="sheet relative z-10 outline-none">
+      <Link href={closeHref} className="scrim-in absolute inset-0 bg-black/40" aria-label={labels.close} />
+      <aside ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="origin-title" className="sheet sheet-in relative z-10 outline-none">
         <header className="flex items-start justify-between gap-3 border-b border-slate-200 p-4">
           <div className="min-w-0">
             {detail && backHref && (
@@ -99,7 +99,7 @@ export function OriginPanel({
         <div className="flex-1 overflow-y-auto p-4">
           {detail ? (
             <div>
-              <p className={`text-3xl font-bold ${detail.income ? "text-ok" : ""}`}>{detail.amount}</p>
+              <p className={`num-display text-[1.75rem] ${detail.income ? "text-ok" : "text-ink"}`}>{detail.amount}</p>
               <dl className="mt-5 space-y-3">
                 {detail.rows.map((row) => (
                   <div key={row.label} className="border-b border-slate-100 pb-3">
@@ -134,7 +134,9 @@ export function OriginPanel({
                             <span className="block truncate font-semibold">{row.merchant}</span>
                             <span className="text-xs text-slate-500">{row.meta}</span>
                           </span>
-                          <span className={`shrink-0 font-semibold ${row.income ? "text-ok" : ""}`}>{row.amount}</span>
+                          <span className={`num shrink-0 text-right font-semibold tabular-nums tracking-normal ${row.income ? "text-ok" : "text-ink"}`}>
+                            {row.amount}
+                          </span>
                         </Link>
                       </li>
                     ))}

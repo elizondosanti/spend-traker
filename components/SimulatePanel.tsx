@@ -45,7 +45,7 @@ export function SyncButton({ label }: { label: string }) {
   const [state, action, pending] = useActionState(syncGmailAction, undefined);
   return (
     <form action={action} className="flex flex-wrap items-center gap-3">
-      <button className="btn-ghost" disabled={pending}>
+      <button className="btn" disabled={pending}>
         {pending ? "…" : label}
       </button>
       <span aria-live="polite" className="text-sm">

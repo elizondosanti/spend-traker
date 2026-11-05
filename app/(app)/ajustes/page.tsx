@@ -17,8 +17,8 @@ export default async function Settings({ searchParams }: PageProps<"/ajustes">) 
   const [connection, cards, stats] = await Promise.all([getGmailConnection(user.id), listCards(user.id), memoryStats(user.id)]);
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold">{tr("navSettings")}</h1>
+    <div className="page">
+      <h1 className="large-title">{tr("navSettings")}</h1>
 
       <section className="card space-y-3">
         <h2 className="text-lg font-semibold">{tr("gmailTitle")}</h2>
@@ -47,7 +47,7 @@ export default async function Settings({ searchParams }: PageProps<"/ajustes">) 
             <input name="fx_rate" type="number" step="any" min={1} defaultValue={user.fx_rate} className="input" />
           </label>
           <p className="text-xs text-slate-500">{tr("fxHelp")}</p>
-          <button className="btn-ghost">{tr("save")}</button>
+          <button className="btn">{tr("save")}</button>
         </form>
       </section>
 
@@ -65,7 +65,7 @@ export default async function Settings({ searchParams }: PageProps<"/ajustes">) 
                   {c.brand} ····{c.last4}
                 </span>
                 <input name="nickname" defaultValue={c.nickname} placeholder={tr("nickname")} aria-label={tr("nickname")} className="input max-w-xs" />
-                <button className="btn-ghost">{tr("save")}</button>
+                <button className="btn">{tr("save")}</button>
               </form>
             </li>
           ))}

@@ -46,3 +46,8 @@ next-env.d.ts
 
 # generated for the editor, not part of the app
 AGENTS.md
+
+# agent / editor tooling (local only — not for jury or GitHub)
+.agents/
+.cursor/
+skills-lock.json

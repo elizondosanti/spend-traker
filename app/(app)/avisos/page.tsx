@@ -2,7 +2,7 @@ import { categorizeAction } from "@/app/actions";
 import { listCategories, listPendingReviews } from "@/lib/data";
 import { formatDate } from "@/lib/format";
 import { translator, type TKey } from "@/lib/i18n";
-import { formatMoney } from "@/lib/money";
+import { formatSignedMoney } from "@/lib/money";
 import { requireUser, uiLang } from "@/lib/session";
 
 export default async function Review() {
@@ -13,10 +13,10 @@ export default async function Review() {
   const nameOf = (id: string | null) => categories.find((c) => c.id === id)?.name;
 
   return (
-    <div className="space-y-4">
+    <div className="page">
       <div>
-        <h1 className="text-xl font-bold">{tr("navReview")}</h1>
-        <p className="text-slate-600">{tr("reviewHelp")}</p>
+        <h1 className="large-title">{tr("navReview")}</h1>
+        <p className="on-brand-muted mt-1">{tr("reviewHelp")}</p>
       </div>
 
       {reviews.length === 0 && <p className="card text-slate-600">✓ {tr("noReviews")}</p>}
@@ -38,9 +38,10 @@ export default async function Review() {
                     {tx.card_last4 ? ` · ${tx.card_brand} ····${tx.card_last4}` : ""}
                   </p>
                 </div>
-                <p className={`text-lg font-bold ${tx.direction === "ingreso" ? "text-ok" : ""}`}>
-                  {tx.direction === "ingreso" ? "+" : "−"}
-                  {formatMoney(tx.amount, tx.currency, lang)}
+                <p
+                  className={`num shrink-0 text-right text-base font-semibold tabular-nums tracking-normal ${tx.direction === "ingreso" ? "text-ok" : "text-ink"}`}
+                >
+                  {formatSignedMoney(tx.amount, tx.currency, tx.direction, lang)}
                 </p>
               </div>
 

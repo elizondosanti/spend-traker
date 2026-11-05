@@ -8,7 +8,7 @@ import { countPendingReviews, currentMonth, getGmailConnection, listTransactions
 import { formatDate, formatMonth, shiftMonth } from "@/lib/format";
 import { syncGmailIfStale } from "@/lib/gmail";
 import { translator } from "@/lib/i18n";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, formatSignedMoney } from "@/lib/money";
 import { movementAmount, movementFacts, movementMeta } from "@/lib/movement-view";
 import { requireUser, uiLang } from "@/lib/session";
 
@@ -57,34 +57,31 @@ export default async function Home({ searchParams }: PageProps<"/inicio">) {
   const expenseCount = (id: string) => monthTxs.filter((tx) => tx.category_id === id && tx.direction === "gasto").length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <Link href={`/inicio?mes=${shiftMonth(month, -1)}`} className="btn-ghost px-3" aria-label="←">
-          ←
+    <div className="page">
+      <div className="flex items-center justify-between gap-3">
+        <Link href={`/inicio?mes=${shiftMonth(month, -1)}`} className="icon-btn" aria-label="Mes anterior">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+            <path d="M11.25 3.75 6 9l5.25 5.25" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </Link>
-        <h1 className="text-xl font-bold">{formatMonth(month, lang)}</h1>
-        <Link href={`/inicio?mes=${shiftMonth(month, 1)}`} className="btn-ghost px-3" aria-label="→">
-          →
-        </Link>
-      </div>
-      <div className="flex flex-wrap justify-end gap-2">
-        <Link href="/movimientos#agregar" className="btn">
-          {tr("addExpense")}
-        </Link>
-        <Link href="/movimientos#ingreso" className="btn">
-          {tr("addIncome")}
+        <h1 className="large-title">{formatMonth(month, lang)}</h1>
+        <Link href={`/inicio?mes=${shiftMonth(month, 1)}`} className="icon-btn" aria-label="Mes siguiente">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+            <path d="M6.75 3.75 12 9l-5.25 5.25" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </Link>
       </div>
 
       <section className="grid gap-3 sm:grid-cols-3">
-        <Stat title={tr("spentThisMonth")} main={money(summary.spent.CRC, "CRC")} sub={money(summary.spent.USD, "USD")} />
-        <Stat title={tr("incomeThisMonth")} main={money(summary.income.CRC, "CRC")} sub={money(summary.income.USD, "USD")} />
         <Stat
           title={left.CRC >= 0 ? tr("budgetLeft") : tr("overBudget")}
           main={money(Math.abs(left.CRC), "CRC")}
           sub={money(Math.abs(left.USD), "USD")}
           tone={left.CRC >= 0 ? "ok" : "bad"}
+          lead
         />
+        <Stat title={tr("spentThisMonth")} main={money(summary.spent.CRC, "CRC")} sub={money(summary.spent.USD, "USD")} />
+        <Stat title={tr("incomeThisMonth")} main={money(summary.income.CRC, "CRC")} sub={money(summary.income.USD, "USD")} />
       </section>
 
       {pending > 0 && (
@@ -122,7 +119,7 @@ export default async function Home({ searchParams }: PageProps<"/inicio">) {
                         <Link
                           href={open ? closeHref : inicioHref(month, c.id)}
                           aria-current={category?.id === c.id ? "true" : undefined}
-                          className={`block rounded-xl px-2 py-2 hover:bg-brand-soft ${category?.id === c.id ? "bg-brand-soft" : ""}`}
+                          className={`block rounded-xl px-2 py-2 hover:bg-brand-soft ${category?.id === c.id ? "row-active" : ""}`}
                         >
                           <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
                             <span className="min-w-0">
@@ -155,12 +152,10 @@ export default async function Home({ searchParams }: PageProps<"/inicio">) {
         </section>
 
         <aside className="space-y-4">
-          {process.env.VERCEL ? null : (
           <SimulatePanel
             samples={SAMPLE_EMAILS.map(({ id, label }) => ({ id, label }))}
             labels={{ title: tr("simulateTitle"), help: tr("simulateHelp"), button: tr("simulateButton"), paste: tr("pasteEmail") }}
           />
-          )}
           {gmail && (
             <div className="card space-y-2">
               <p className="text-sm text-slate-600">
@@ -190,14 +185,23 @@ export default async function Home({ searchParams }: PageProps<"/inicio">) {
                         {tx.card_last4 ? ` · ${tx.card_brand} ${tx.card_last4}` : ""}
                       </span>
                     </span>
-                    <span className={`shrink-0 font-semibold ${tx.direction === "ingreso" ? "text-ok" : ""}`}>
-                      {tx.direction === "ingreso" ? "+" : "−"}
-                      {money(tx.amount, tx.currency)}
+                    <span
+                      className={`num shrink-0 text-right font-semibold tabular-nums tracking-normal ${tx.direction === "ingreso" ? "text-ok" : "text-ink"}`}
+                    >
+                      {formatSignedMoney(tx.amount, tx.currency, tx.direction, lang)}
                     </span>
                   </Link>
                 </li>
               ))}
             </ul>
+          </div>
+          <div className="grid w-full grid-cols-2 gap-2">
+            <Link href="/movimientos#agregar" className="btn">
+              {tr("addExpense")}
+            </Link>
+            <Link href="/movimientos#ingreso" className="btn">
+              {tr("addIncome")}
+            </Link>
           </div>
         </aside>
       </div>
@@ -258,12 +262,18 @@ export default async function Home({ searchParams }: PageProps<"/inicio">) {
   );
 }
 
-function Stat({ title, main, sub, tone }: { title: string; main: string; sub: string; tone?: "ok" | "bad" }) {
+function Stat({ title, main, sub, tone, lead }: { title: string; main: string; sub: string; tone?: "ok" | "bad"; lead?: boolean }) {
   return (
-    <div className="card">
-      <p className="text-sm text-slate-600">{title}</p>
-      <p className={`mt-1 text-2xl font-bold ${tone === "bad" ? "text-bad" : tone === "ok" ? "text-ok" : ""}`}>{main}</p>
-      <p className="text-sm text-slate-500">{sub}</p>
+    <div className={`card ${lead ? "card-lead" : ""}`}>
+      <p className="eyebrow">{title}</p>
+      <p
+        className={`num-display mt-2 text-ink ${lead ? "text-[2.25rem]" : "text-[1.625rem]"} ${
+          tone === "bad" ? "text-bad" : tone === "ok" ? "text-ok" : ""
+        }`}
+      >
+        {main}
+      </p>
+      <p className="mt-1.5 text-sm text-slate-500">{sub}</p>
     </div>
   );
 }

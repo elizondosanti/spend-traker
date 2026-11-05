@@ -20,16 +20,9 @@ export function AuthForms({ labels }: { labels: Labels }) {
 
   return (
     <div>
-      <div role="tablist" className="mb-4 grid grid-cols-2 rounded-lg bg-slate-100 p-1 text-sm font-medium">
+      <div role="tablist" className="auth-tabs mb-4">
         {(["login", "register"] as const).map((m) => (
-          <button
-            key={m}
-            role="tab"
-            type="button"
-            aria-selected={mode === m}
-            onClick={() => setMode(m)}
-            className={`rounded-md py-2 ${mode === m ? "bg-white text-brand shadow-sm" : "text-slate-600"}`}
-          >
+          <button key={m} role="tab" type="button" aria-selected={mode === m} onClick={() => setMode(m)} className="auth-tab">
             {labels[m]}
           </button>
         ))}

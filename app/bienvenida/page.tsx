@@ -23,12 +23,12 @@ export default async function Onboarding({ searchParams }: PageProps<"/bienvenid
     <main className="flex flex-1 flex-col bg-brand px-4 py-8">
       <div className="mx-auto w-full max-w-2xl space-y-4">
         <div className="flex items-center gap-3 text-white">
-          <Image src="/logo.png" alt="" width={48} height={48} className="rounded-xl" />
+          <Image src="/logo.png" alt="" width={40} height={40} className="brand-mark" />
           <div>
-            <p className="text-sm text-white/70">
+            <p className="on-brand-muted text-xs font-semibold tracking-[0.08em] uppercase">
               {tr("step")} {step} / {STEPS}
             </p>
-            <h1 className="text-xl font-bold">{tr("welcome")}</h1>
+            <h1 className="mt-1 text-xl font-semibold tracking-[-0.02em]">{tr("welcome")}</h1>
           </div>
         </div>
         <div className="flex gap-1" aria-hidden>

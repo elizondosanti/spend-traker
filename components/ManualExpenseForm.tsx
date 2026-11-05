@@ -78,7 +78,7 @@ export function ManualExpenseForm({
       </div>
 
       {mode && (
-        <form key={mode} ref={formRef} action={action} className="card grid gap-3 sm:grid-cols-2">
+        <form key={mode} ref={formRef} action={action} className="form-reveal card grid gap-3 sm:grid-cols-2">
           <p className="text-sm text-slate-600 sm:col-span-2">{mode === "gasto" ? labels.help : labels.incomeHelp}</p>
           <input type="hidden" name="direction" value={mode} />
           <label className="block text-sm sm:col-span-2">

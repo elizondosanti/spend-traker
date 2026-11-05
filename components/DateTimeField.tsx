@@ -106,23 +106,39 @@ export function DateTimeField({
     <div ref={wrapRef} className="relative">
       <span className="mb-1 block text-sm font-medium">{label}</span>
       <input type="hidden" name={name} value={value} />
-      <button type="button" className="input text-left" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
+      <button type="button" className="input flex min-h-11 w-full items-center text-left" aria-expanded={open} onClick={() => setOpen((current) => !current)}>
         {shown ? formatDate(shown, lang, true) : value}
       </button>
       {open && (
         <div className="card absolute z-30 mt-1 w-full max-w-xs p-3 shadow-lg">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <button type="button" className="btn-ghost px-2" onClick={() => shiftMonth(-1)} aria-label="←">
-              ←
+            <button
+              type="button"
+              className="btn-ghost size-9 shrink-0 !rounded-[10px] !px-0"
+              onClick={() => shiftMonth(-1)}
+              aria-label={lang === "en" ? "Previous month" : "Mes anterior"}
+            >
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <path d="M11.25 3.75 6 9l5.25 5.25" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
             <p className="text-sm font-semibold">{monthTitle}</p>
-            <button type="button" className="btn-ghost px-2" onClick={() => shiftMonth(1)} aria-label="→">
-              →
+            <button
+              type="button"
+              className="btn-ghost size-9 shrink-0 !rounded-[10px] !px-0"
+              onClick={() => shiftMonth(1)}
+              aria-label={lang === "en" ? "Next month" : "Mes siguiente"}
+            >
+              <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <path d="M6.75 3.75 12 9l-5.25 5.25" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
           </div>
           <div className="grid grid-cols-7 gap-1 text-center text-xs text-slate-500">
             {weekdays.map((day, index) => (
-              <span key={`${day}-${index}`}>{day}</span>
+              <span key={`${day}-${index}`} className="flex aspect-square items-center justify-center">
+                {day}
+              </span>
             ))}
           </div>
           <div className="mt-1 grid grid-cols-7 gap-1">
@@ -132,21 +148,21 @@ export function DateTimeField({
                   key={day}
                   type="button"
                   onClick={() => chooseDay(day)}
-                  className={`h-8 rounded-lg text-sm ${
+                  className={`aspect-square rounded-lg text-sm ${
                     day === parts.day && view.year === parts.year && view.month === parts.month ? "bg-brand font-semibold text-white" : "hover:bg-brand-soft"
                   }`}
                 >
                   {day}
                 </button>
               ) : (
-                <span key={`empty-${index}`} />
+                <span key={`empty-${index}`} className="aspect-square" />
               ),
             )}
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2">
             <select
               aria-label={label}
-              className="input"
+              className="input min-h-11"
               value={parts.hour12}
               onChange={(event) => setValue(writeValue(parts.year, parts.month, parts.day, Number(event.target.value), parts.minute, parts.pm))}
             >
@@ -158,7 +174,7 @@ export function DateTimeField({
             </select>
             <select
               aria-label={label}
-              className="input"
+              className="input min-h-11"
               value={parts.minute}
               onChange={(event) => setValue(writeValue(parts.year, parts.month, parts.day, parts.hour12, Number(event.target.value), parts.pm))}
             >
@@ -170,7 +186,7 @@ export function DateTimeField({
             </select>
             <select
               aria-label={label}
-              className="input"
+              className="input min-h-11"
               value={parts.pm ? "pm" : "am"}
               onChange={(event) =>
                 setValue(writeValue(parts.year, parts.month, parts.day, parts.hour12, parts.minute, event.target.value === "pm"))

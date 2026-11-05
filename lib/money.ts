@@ -1,5 +1,8 @@
 export type Currency = "CRC" | "USD";
 
+/** Narrow no-break space — keeps currency groups tight without wrapping. */
+const THIN = "\u202F";
+
 /** Accepts "10,300.00", "92.250,00", "3,00", "197,346.87", "960.00", "₡ 8.500". */
 export function parseAmount(raw: string): number {
   let t = raw.replace(/[^\d.,]/g, "");
@@ -30,10 +33,28 @@ export function convert(amount: number, from: Currency, to: Currency, fxRate: nu
   return from === "USD" ? amount * fxRate : amount / fxRate;
 }
 
+/** Soften CRC colón typography: thin gaps after ₡ and between thousands. Leaves USD alone. */
+function polishMoney(formatted: string, currency: Currency, lang: "es" | "en"): string {
+  if (currency !== "CRC" || lang !== "es") return formatted;
+  return formatted.replace(/\u00A0/g, THIN).replace(/₡(?=\d)/, `₡${THIN}`);
+}
+
 export function formatMoney(amount: number, currency: Currency, lang: "es" | "en" = "es"): string {
-  return new Intl.NumberFormat(lang === "es" ? "es-CR" : "en-US", {
+  const formatted = new Intl.NumberFormat(lang === "es" ? "es-CR" : "en-US", {
     style: "currency",
     currency,
     maximumFractionDigits: currency === "CRC" ? 0 : 2,
   }).format(amount);
+  return polishMoney(formatted, currency, lang);
+}
+
+/** Signed movement amount: `− ₡ 2 500` / `+ $12.50` with a thin gap after the sign. */
+export function formatSignedMoney(
+  amount: number,
+  currency: Currency,
+  direction: "ingreso" | "gasto",
+  lang: "es" | "en" = "es",
+): string {
+  const sign = direction === "ingreso" ? "+" : "−";
+  return `${sign}${THIN}${formatMoney(amount, currency, lang)}`;
 }

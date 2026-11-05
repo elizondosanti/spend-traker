@@ -1,10 +1,11 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { AuthForms } from "@/components/AuthForms";
+import { BrandMark } from "@/components/BrandMark";
 import { LangToggle } from "@/components/LangToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { translator } from "@/lib/i18n";
 import { cookieTheme, currentUser, uiLang } from "@/lib/session";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { demoAction } from "./actions";
 
 export default async function Landing() {
@@ -15,25 +16,38 @@ export default async function Landing() {
   const tr = translator(lang);
 
   return (
-    <main className="flex flex-1 flex-col bg-brand text-white">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-end px-5 pt-5">
-        <ThemeToggle theme={theme} redirectTo="/" />
-        <LangToggle lang={lang} redirectTo="/" />
+    <main className="flex flex-1 flex-col text-white">
+      <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-5 pt-5">
+        <BrandMark priority />
+        <div className="flex items-center gap-2">
+          <ThemeToggle theme={theme} redirectTo="/" />
+          <LangToggle lang={lang} redirectTo="/" />
+        </div>
       </header>
-      <div className="mx-auto grid w-full max-w-5xl flex-1 items-center gap-10 px-5 py-10 md:grid-cols-2">
-        <section>
-          <Image src="/logo.png" alt="Spend Traker" width={200} height={200} priority className="mb-6 rounded-2xl" />
-          <h1 className="text-3xl font-bold leading-tight sm:text-4xl">{tr("tagline")}</h1>
-          <p className="mt-4 max-w-md text-lg text-white/85">{tr("pitch")}</p>
-          <ul className="mt-6 space-y-2 text-white/85">
-            <li>✓ {tr("trust1")}</li>
-            <li>✓ {tr("trust2")}</li>
-            <li>✓ {tr("trust3")}</li>
+
+      <div className="mx-auto grid w-full max-w-5xl flex-1 items-center gap-10 px-5 py-10 md:grid-cols-2 md:gap-14">
+        <section className="brand-hero rise-in">
+          <Image src="/logo.png" alt="" width={72} height={72} priority className="brand-hero-mark" />
+          <p className="brand-hero-name" aria-label="Spend Traker">
+            <span className="brand-spend">Spend</span>
+            <span className="brand-traker">Traker</span>
+          </p>
+          <h1 className="max-w-md text-[1.35rem] font-medium leading-snug tracking-[-0.015em] text-white/95 sm:text-[1.5rem]">
+            {tr("tagline")}
+          </h1>
+          <p className="on-brand-muted max-w-md text-base leading-relaxed sm:text-lg">{tr("pitch")}</p>
+          <ul className="trust-list max-w-md">
+            <li>{tr("trust1")}</li>
+            <li>{tr("trust2")}</li>
+            <li>{tr("trust3")}</li>
           </ul>
         </section>
-        <section className="theme-surface p-6 text-ink">
+
+        <section className="theme-surface rise-in-delay p-6 text-ink">
           <form action={demoAction}>
-            <button className="btn w-full bg-ink py-3 text-base hover:bg-black">{tr("tryDemo")}</button>
+            <button type="submit" className="btn w-full py-3 text-base">
+              {tr("tryDemo")}
+            </button>
           </form>
           <p className="my-4 text-center text-sm text-slate-500">{tr("or")}</p>
           <AuthForms

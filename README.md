@@ -1,21 +1,34 @@
 # Spend Traker
 
-Spend Traker anota en el presupuesto las compras, transferencias SINPE y pagos de servicios que el BAC Credomatic manda por correo. El usuario confirma lo dudoso. La próxima vez el mismo comercio o concepto entra solo.
+Spend Traker anota en el presupuesto las compras, transferencias SINPE y pagos de servicios que el BAC Credomatic manda por correo. El usuario confirma lo dudoso; la próxima vez el mismo comercio o concepto entra solo.
 
-## Cómo entra un movimiento
+**Demo en producción:** [https://spend-traker-p5vv.vercel.app](https://spend-traker-p5vv.vercel.app)
 
-1. La persona crea una cuenta con correo y contraseña. La sesión queda en una cookie firmada.
-2. Conecta el Gmail donde llegan los avisos del BAC. La app pide solo lectura (`gmail.readonly`). No pide la clave del banco y no puede enviar, borrar ni modificar correos.
-3. Al abrir Inicio, al tocar **Revisar Gmail ahora**, o una vez al día, la app busca correos de `@baccredomatic.com` y `@notificacionesbaccr.com`.
-4. De cada correo se leen fecha, monto, moneda, comercio o contraparte, concepto, ciudad, tarjeta y referencia.
-5. La categoría sale, en este orden: memoria de correcciones anteriores, reglas por palabras, y si hace falta un modelo de lenguaje (Gemini a través de Vercel AI Gateway). Si no hay certeza, el movimiento queda en **Avisos**.
-6. Cada correo se procesa una sola vez.
+## Abrir la demo (jurado)
 
-También se puede anotar a mano un gasto o un ingreso (efectivo, SINPE Móvil, transferencia bancaria o una tarjeta ya detectada), con fecha corregible.
+1. Entrá a [https://spend-traker-p5vv.vercel.app](https://spend-traker-p5vv.vercel.app).
+2. Tocá **Entrar como demo** (no hace falta crear cuenta).
+3. En **Inicio** vas a ver el mes: categorías, montos y lo que queda.
+4. Usá **Simular correo BAC** para meter un aviso de compra/SINPE/servicio sin Gmail.
+5. Revisá **Movimientos**, **Avisos** (si algo quedó sin categoría segura) y **Ajustes**.
 
-## Datos que se guardan
+La cuenta demo comparte datos y se puede reiniciar desde Ajustes. No conecta Gmail.
 
-Postgres (Neon en producción, archivo local en desarrollo): usuarios, categorías con tope mensual, tarjetas (marca y últimos 4), movimientos, memoria de comercios y conceptos, avisos pendientes y la conexión de Gmail. El token de Gmail se guarda cifrado.
+## Guion de demo (~3 minutos)
+
+1. **Landing (15 s)** — Mostrar marca Spend Traker y el botón de demo.
+2. **Entrar como demo (20 s)** — Entrar sin registro; banner de cuenta demo.
+3. **Inicio (60 s)** — Topes por categoría y saldo del mes. Simular un correo BAC (compra o SINPE) y mostrar cómo aparece el movimiento.
+4. **Movimientos / Avisos (40 s)** — Filtrar o abrir un movimiento; si hay aviso pendiente, confirmar categoría.
+5. **Confianza Gmail (40 s)** — En Ajustes explicar: solo lectura (`gmail.readonly`), no pide la clave del banco, no envía ni borra correos. La demo no conecta Gmail; un usuario real sí.
+6. **Tema claro/oscuro (15 s)** — Alternar tema sin romper la pantalla.
+
+## Confianza Gmail (solo lectura)
+
+- Scope: `https://www.googleapis.com/auth/gmail.readonly`.
+- La app **no** pide la clave del banco y **no** puede enviar, borrar ni modificar correos.
+- Busca avisos de `@baccredomatic.com` y `@notificacionesbaccr.com`.
+- El token de Gmail se guarda cifrado. La cuenta demo no conecta Gmail (usa simulación + datos sembrados).
 
 ## Correr en local
 
@@ -24,29 +37,35 @@ npm install
 npm run dev
 ```
 
-http://localhost:3000 usa una base embebida en `.data/`. La cuenta demo no conecta Gmail.
+Abrí [http://localhost:3000](http://localhost:3000). Sin variables, usa una base embebida en `.data/`.
 
 ```bash
 npm test
 ```
 
-## Producción
+## Variables de entorno
 
-Variables en Vercel:
+Copiá `.env.example` a `.env.local`. **No subas secretos al repo.**
 
 | Variable | Uso |
 | --- | --- |
-| `DATABASE_URL` | Postgres de Neon |
-| `SESSION_SECRET` | Firma la sesión. Obligatoria en producción |
-| `CRON_SECRET` | Autoriza la sincronización diaria |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Botón Conectar Gmail |
-| `APP_URL` | URL pública, para el retorno de Google |
-| `AI_GATEWAY_API_KEY` | Solo fuera de Vercel. En Vercel el modelo se autentica solo |
+| `DATABASE_URL` | Postgres (Neon en producción). Vacío = PGlite local |
+| `SESSION_SECRET` | Firma la sesión (obligatoria en producción) |
+| `ENCRYPTION_KEY` | Opcional; si falta, se deriva de `SESSION_SECRET` |
+| `CRON_SECRET` | Autoriza el cron diario de Gmail |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | OAuth Conectar Gmail |
+| `APP_URL` | URL pública (retorno de Google) |
+| `GOOGLE_PLACES_API_KEY` | Opcional; reconocer comercios |
+| `AI_GATEWAY_API_KEY` | Solo fuera de Vercel; en Vercel alcanza OIDC |
+| `AI_MODEL` | Modelo (por defecto Gemini vía AI Gateway) |
 
-Sin la clave de Google el registro y el presupuesto funcionan, pero el correo no se conecta. Sin el modelo, clasifican las reglas y la memoria; lo demás va a Avisos.
+Sin Google OAuth el registro y el presupuesto funcionan; el correo no se conecta. Sin IA clasifican reglas y memoria; lo dudoso va a Avisos.
 
-### Gmail
+## Documentación del equipo
 
-En Google Cloud: habilitar Gmail API, pantalla de consentimiento en modo prueba, scope `https://www.googleapis.com/auth/gmail.readonly`, y los correos de la demo como usuarios de prueba. Cliente OAuth web con redirección `https://TU-APP/api/gmail/callback` y `http://localhost:3000/api/gmail/callback`.
+- [PRODUCT.md](./PRODUCT.md) — propósito, marca y principios del producto.
+- [docs/](./docs/) — índice y PDFs de sprints en `docs/sprints/`.
 
-Make puede reenviar los correos de una sola cuenta a `POST /api/inbound/{token}` (el token está en Ajustes). No reemplaza Conectar Gmail para un usuario nuevo.
+## Stack
+
+Next.js (App Router), Postgres (Neon / PGlite), Vercel (hosting + cron), Google OAuth Gmail readonly, Vercel AI Gateway (clasificación opcional).

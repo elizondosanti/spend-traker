@@ -15,7 +15,9 @@ export function formatMonth(month: string, lang: Lang): string {
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${month}-01T12:00:00Z`));
-  return label.charAt(0).toUpperCase() + label.slice(1);
+  // es-CR yields "noviembre de 2026"; drop the "de" for a calmer title.
+  const cleaned = label.replace(/\s+de\s+/i, " ");
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
 
 export function shiftMonth(month: string, delta: number): string {

@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { BrandMark } from "@/components/BrandMark";
 import { LangToggle } from "@/components/LangToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Nav } from "@/components/Nav";
@@ -19,17 +19,18 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <>
-      <header className="bg-brand text-white">
+      <header className="app-bar">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3 px-4 py-3">
-          <Link href="/inicio" className="flex items-center gap-2 font-bold">
-            <Image src="/logo.png" alt="" width={36} height={36} className="rounded-lg" />
-            <span>Spend Traker</span>
+          <Link href="/inicio" className="shrink-0">
+            <BrandMark priority />
           </Link>
           <div className="ml-auto flex items-center gap-2">
-            <ThemeToggle theme={theme} />
-            <LangToggle lang={lang} />
+            <ThemeToggle theme={theme} tone="dark" />
+            <LangToggle lang={lang} tone="dark" />
             <form action={logoutAction}>
-              <button className="rounded-md px-2 py-1 text-sm text-white/80 hover:text-white">{tr("logout")}</button>
+              <button type="submit" className="chip-btn">
+                {tr("logout")}
+              </button>
             </form>
           </div>
           <div className="w-full">
@@ -48,7 +49,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       {user.is_demo && (
         <div className="bg-amber-100 px-4 py-2 text-center text-sm text-amber-900">{tr("demoBanner")}</div>
       )}
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">{children}</main>
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">{children}</main>
     </>
   );
 }

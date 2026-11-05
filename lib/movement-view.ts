@@ -1,7 +1,7 @@
 import type { Transaction } from "./data";
 import { formatDate } from "./format";
 import type { Lang, TKey } from "./i18n";
-import { formatMoney } from "./money";
+import { formatSignedMoney } from "./money";
 
 export function movementFacts(tx: Transaction, lang: Lang, tr: (key: TKey) => string): { label: string; value: string }[] {
   const card = tx.card_last4
@@ -23,8 +23,7 @@ export function movementFacts(tx: Transaction, lang: Lang, tr: (key: TKey) => st
 }
 
 export function movementAmount(tx: Transaction, lang: Lang): string {
-  const money = formatMoney(tx.amount, tx.currency, lang);
-  return `${tx.direction === "ingreso" ? "+" : "−"}${money}`;
+  return formatSignedMoney(tx.amount, tx.currency, tx.direction, lang);
 }
 
 export function movementMeta(tx: Transaction, lang: Lang, tr: (key: TKey) => string): string {
