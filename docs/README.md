@@ -17,7 +17,9 @@ PDFs en [`sprints/`](./sprints/):
 | 01 | [Sprint_01.pdf](./sprints/Sprint_01.pdf) | Entregado |
 | 02 | [Sprint_02.pdf](./sprints/Sprint_02.pdf) | Entregado |
 | 03 | [Sprint_03.pdf](./sprints/Sprint_03.pdf) | Entregado |
-| 04 | — | Carpeta del equipo vacía; no hay PDF de Sprint 04 en el repo |
+| 04 | [Sprint_04.pdf](./sprints/Sprint_04.pdf) | Comunicación y venta; guion en [Sprint_04_pitch.md](./sprints/Sprint_04_pitch.md) |
+
+Antes de Dojo: completar en el PDF (o aquí) el enlace de **video** (opcional) y la **cuenta de X** del proyecto.
 
 ## Producto
 
