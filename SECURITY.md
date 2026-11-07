@@ -12,8 +12,8 @@ If you find a vulnerability or exposed secret, open a private report with the re
 
 ## Public endpoints
 
-- `POST /api/inbound/[token]` — capability URL per user (Make forwarder). Treat the token as a secret; rotate by regenerating `inbound_token` if leaked.
 - `GET /api/cron/gmail` — requires `Authorization: Bearer $CRON_SECRET`.
+- Gmail OAuth: `/api/gmail/connect` and `/api/gmail/callback` (authenticated user flow).
 
 ## Test data
 

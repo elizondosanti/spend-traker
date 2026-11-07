@@ -4,7 +4,7 @@ import { PasswordForm } from "@/components/PasswordForm";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LangToggle } from "@/components/LangToggle";
 import { getGmailConnection, listCards, memoryStats } from "@/lib/data";
-import { appUrl, gmailConfigured } from "@/lib/gmail";
+import { gmailConfigured } from "@/lib/gmail";
 import { cookieTheme } from "@/lib/session";
 import { translator } from "@/lib/i18n";
 import { requireUser, uiLang } from "@/lib/session";
@@ -100,14 +100,6 @@ export default async function Settings({ searchParams }: PageProps<"/ajustes">) 
           </label>
           <button className="btn">{tr("addCard")}</button>
         </form>
-      </section>
-
-      <section className="card space-y-2">
-        <h2 className="text-lg font-semibold">{tr("forwardTitle")}</h2>
-        <p className="text-sm text-slate-600">{tr("forwardHelp")}</p>
-        <code className="block overflow-x-auto rounded-lg bg-slate-100 p-3 text-xs">
-          POST {appUrl()}/api/inbound/{user.is_demo ? "••••" : user.inbound_token}
-        </code>
       </section>
 
       <section className="card grid gap-3 text-center sm:grid-cols-3">

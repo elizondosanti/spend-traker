@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS users (
   fx_rate double precision NOT NULL DEFAULT 505,
   onboarded boolean NOT NULL DEFAULT false,
   is_demo boolean NOT NULL DEFAULT false,
-  inbound_token text UNIQUE,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE TABLE IF NOT EXISTS categories (
@@ -125,6 +124,8 @@ async function init(): Promise<Runner> {
   for (const statement of SCHEMA.split(";").map((s) => s.trim()).filter(Boolean)) {
     await run(statement);
   }
+  // Drop legacy inbound webhook column from older databases (feature removed).
+  await run("ALTER TABLE users DROP COLUMN IF EXISTS inbound_token");
   return run;
 }
 

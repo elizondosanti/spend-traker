@@ -1,5 +1,4 @@
 import { SEED_CATEGORIES } from "./categories";
-import { randomToken } from "./crypto";
 import { newId, query, queryOne } from "./db";
 import type { Lang } from "./i18n";
 
@@ -11,14 +10,13 @@ export type User = {
   fx_rate: number;
   onboarded: boolean;
   is_demo: boolean;
-  inbound_token: string;
 };
 
 export const DEMO_EMAIL = "demo@spendtraker.app";
 
 export async function getUserById(id: string): Promise<User | null> {
   return queryOne<User>(
-    "SELECT id, email, name, lang, fx_rate, onboarded, is_demo, inbound_token FROM users WHERE id = $1",
+    "SELECT id, email, name, lang, fx_rate, onboarded, is_demo FROM users WHERE id = $1",
     [id],
   );
 }
@@ -42,8 +40,8 @@ export async function createUser(input: {
 }): Promise<string> {
   const id = newId();
   await query(
-    "INSERT INTO users (id, email, name, password_hash, lang, is_demo, onboarded, inbound_token) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)",
-    [id, input.email, input.name, input.passwordHash, input.lang, Boolean(input.isDemo), Boolean(input.isDemo), randomToken()],
+    "INSERT INTO users (id, email, name, password_hash, lang, is_demo, onboarded) VALUES ($1,$2,$3,$4,$5,$6,$7)",
+    [id, input.email, input.name, input.passwordHash, input.lang, Boolean(input.isDemo), Boolean(input.isDemo)],
   );
   await seedCategories(id, input.lang);
   return id;
