@@ -35,26 +35,26 @@ describe("parseBacEmail", () => {
       amount: 10300,
       currency: "CRC",
       cardBrand: "AMEX",
-      cardLast4: "4743",
-      ref: "4743-361611",
+      cardLast4: "1001",
+      ref: "1001-361611",
     });
-    expect(parseBacEmail(sample("parquimetros"))).toMatchObject({ cardBrand: "MASTER", cardLast4: "3771", amount: 960 });
+    expect(parseBacEmail(sample("parquimetros"))).toMatchObject({ cardBrand: "MASTER", cardLast4: "2002", amount: 960 });
   });
 
   it("parses incoming SINPE with and without concept", () => {
     expect(parseBacEmail(sample("sinpe-sin-descripcion"))).toMatchObject({
       kind: "sinpe",
       direction: "ingreso",
-      merchant: "ANA MORA SOLANO",
+      merchant: "MARIA DEMO QUIROS",
       concept: "",
       amount: 3,
-      cardLast4: "3613",
-      ref: "2026110310283002634402830",
+      cardLast4: "1001",
+      ref: "2026110300000000000000001",
     });
     expect(parseBacEmail(sample("sinpe-alimentacion"))?.concept).toBe("Categoria_alimentacion");
     expect(parseBacEmail(sample("sinpe-horas"))).toMatchObject({
-      merchant: "DEPOSITO DE MADERAS SEBASELI S",
-      concept: "Horas trabajo Fede",
+      merchant: "EMPRESA DEMO MADERAS S.A.",
+      concept: "Horas trabajo demo",
       amount: 92250,
     });
   });
@@ -66,19 +66,19 @@ describe("parseBacEmail", () => {
       merchant: "Municipalidad de Tibás",
       concept: "Servicio municipales locales Tibas",
       amount: 197346.87,
-      cardLast4: "8593",
-      ref: "951442814",
+      cardLast4: "3003",
+      ref: "900000001",
     });
   });
 
   it("parses the HTML table version of a purchase", () => {
     const html = `<table><tr><td>Comercio:</td><td><b>DUNKIN MALL SAN PEDRO</b></td></tr>
       <tr><td>Fecha:</td><td>Oct 30, 2026, 12:13</td></tr>
-      <tr><td>AMEX:</td><td>***********4743</td></tr>
+      <tr><td>AMEX:</td><td>***********1001</td></tr>
       <tr><td>Autorizaci&oacute;n:</td><td>361611</td></tr>
       <tr><td>Tipo de Transacci&oacute;n:</td><td>COMPRA</td></tr>
       <tr><td>Monto:</td><td>CRC 10,300.00</td></tr></table>`;
-    expect(parseBacEmail(htmlToText(html))).toMatchObject({ merchant: "DUNKIN MALL SAN PEDRO", amount: 10300, cardLast4: "4743" });
+    expect(parseBacEmail(htmlToText(html))).toMatchObject({ merchant: "DUNKIN MALL SAN PEDRO", amount: 10300, cardLast4: "1001" });
   });
 
   it("ignores emails that are not BAC movements", () => {
@@ -97,18 +97,18 @@ describe("helpers", () => {
   });
 
   it("treats a SINPE I sent as a gasto, and one addressed to me as an ingreso", () => {
-    const sent = `Estimado(a) Tomas Solano :
-BAC Credomatic le comunica que SANTIAGO ELIZONDO BELLO realizó una transferencia electrónica a su cuenta N° *****7437.
+    const sent = `Estimado(a) Tomas Demo :
+BAC Credomatic le comunica que ALEX RIVERA MORALES realizó una transferencia electrónica a su cuenta N° *****7437.
 La transferencia se realizó el día 04-11-2026 a las 19:57:28 horas; por un monto de 3,00 CRC , por concepto de:
 Gasolina_______
-El número de referencia es 2026110410284000607997209`;
-    expect(samePerson("Santiago Elizondo", "SANTIAGO ELIZONDO BELLO")).toBe(true);
-    expect(directionForHolder(sent, "Santiago Elizondo")).toBe("gasto");
+El número de referencia es 2026110400000000000000009`;
+    expect(samePerson("Alex Rivera", "ALEX RIVERA MORALES")).toBe(true);
+    expect(directionForHolder(sent, "Alex Rivera")).toBe("gasto");
     expect(parseBacEmail(sent)?.concept).toBe("Gasolina");
-    const received = sent.replace("Tomas Solano", "Santiago Elizondo Bello").replace("SANTIAGO ELIZONDO BELLO", "ANA MORA SOLANO");
-    expect(directionForHolder(received, "Santiago Elizondo")).toBe("ingreso");
-    expect(directionForHolder(sent, "", ["elizondosanti0@gmail.com"])).toBe("gasto");
-    expect(directionForHolder(received, "", ["elizondosanti0@gmail.com"])).toBe("ingreso");
+    const received = sent.replace("Tomas Demo", "Alex Rivera Morales").replace("ALEX RIVERA MORALES", "MARIA DEMO QUIROS");
+    expect(directionForHolder(received, "Alex Rivera")).toBe("ingreso");
+    expect(directionForHolder(sent, "", ["alex.rivera@example.com"])).toBe("gasto");
+    expect(directionForHolder(received, "", ["alex.rivera@example.com"])).toBe("ingreso");
   });
 
   it("normalizes memory keys", () => {

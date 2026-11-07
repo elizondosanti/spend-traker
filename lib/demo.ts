@@ -35,16 +35,16 @@ Muchas Gracias.`;
 const PURCHASES = [
   { merchant: "AUTO MERCADO ESCAZU", city: "Escazu", brand: "VISA", last4: "1205", amount: "CRC 38,420.00" },
   { merchant: "WALMART CURRIDABAT", city: "Curridabat", brand: "MASTER", last4: "8810", amount: "CRC 52,310.00" },
-  { merchant: "DUNKIN MALL SAN PEDRO", city: "", brand: "AMEX", last4: "4743", amount: "CRC 4,850.00" },
-  { merchant: "STARBUCKS AVENIDA ESCAZU", city: "Escazu", brand: "AMEX", last4: "4743", amount: "CRC 3,900.00" },
-  { merchant: "UBER TRIP", city: "San Jose", brand: "MASTER", last4: "3771", amount: "CRC 6,240.00" },
-  { merchant: "MSJ PARQUIMETROS", city: "SanJose", brand: "MASTER", last4: "3771", amount: "CRC 960.00" },
+  { merchant: "DUNKIN MALL SAN PEDRO", city: "", brand: "AMEX", last4: "1001", amount: "CRC 4,850.00" },
+  { merchant: "STARBUCKS AVENIDA ESCAZU", city: "Escazu", brand: "AMEX", last4: "1001", amount: "CRC 3,900.00" },
+  { merchant: "UBER TRIP", city: "San Jose", brand: "MASTER", last4: "2002", amount: "CRC 6,240.00" },
+  { merchant: "MSJ PARQUIMETROS", city: "SanJose", brand: "MASTER", last4: "2002", amount: "CRC 960.00" },
   { merchant: "SERVICENTRO DELTA LA SABANA", city: "San Jose", brand: "VISA", last4: "1205", amount: "CRC 30,000.00" },
   { merchant: "FARMACIA FISCHEL", city: "Heredia", brand: "VISA", last4: "1205", amount: "CRC 12,780.00" },
   { merchant: "NETFLIX.COM", city: "Los Gatos", brand: "VISA", last4: "1205", amount: "USD 15.49" },
-  { merchant: "SPOTIFY", city: "Stockholm", brand: "AMEX", last4: "4743", amount: "USD 6.99" },
-  { merchant: "CINEPOLIS TERRAMALL", city: "Cartago", brand: "MASTER", last4: "3771", amount: "CRC 9,600.00" },
-  { merchant: "PIZZA HUT ROHRMOSER", city: "San Jose", brand: "AMEX", last4: "4743", amount: "CRC 14,350.00" },
+  { merchant: "SPOTIFY", city: "Stockholm", brand: "AMEX", last4: "1001", amount: "USD 6.99" },
+  { merchant: "CINEPOLIS TERRAMALL", city: "Cartago", brand: "MASTER", last4: "2002", amount: "CRC 9,600.00" },
+  { merchant: "PIZZA HUT ROHRMOSER", city: "San Jose", brand: "AMEX", last4: "1001", amount: "CRC 14,350.00" },
   { merchant: "PRICESMART ZAPOTE", city: "San Jose", brand: "MASTER", last4: "8810", amount: "CRC 61,200.00" },
   { merchant: "TIENDA UNIVERSAL", city: "San Jose", brand: "VISA", last4: "1205", amount: "CRC 18,990.00" },
   { merchant: "KOLBI RECARGAS", city: "San Jose", brand: "VISA", last4: "1205", amount: "CRC 10,000.00" },
@@ -84,14 +84,14 @@ async function fillDemo(userId: string): Promise<void> {
 
   const salary = await ingestEmail({
     userId,
-    text: sinpeEmail({ from: "EMPRESA DEMO S.A.", account: "3613", amount: "650.000,00 CRC", concept: "Salario quincena", ref: "2026000000001", day: day(0) }),
+    text: sinpeEmail({ from: "EMPRESA DEMO S.A.", account: "1001", amount: "650.000,00 CRC", concept: "Salario quincena", ref: "2026000000001", day: day(0) }),
   });
   if (salary.status === "created" && salary.classification.categoryId) {
     await learn(userId, salary.transactionId, salary.classification.categoryId);
   }
   await ingestEmail({
     userId,
-    text: sinpeEmail({ from: "ANA MORA SOLANO", account: "3613", amount: "7.500,00 CRC", concept: "Sin Descripcion", ref: "2026000000002", day: day(1) }),
+    text: sinpeEmail({ from: "MARIA DEMO QUIROS", account: "1001", amount: "7.500,00 CRC", concept: "Sin Descripcion", ref: "2026000000002", day: day(1) }),
   });
   await query("UPDATE cards SET nickname = 'Walmart' WHERE user_id = $1 AND last4 = '8810'", [userId]);
   await query("UPDATE cards SET nickname = 'Débito' WHERE user_id = $1 AND last4 = '1205'", [userId]);

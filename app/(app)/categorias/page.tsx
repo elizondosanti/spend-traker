@@ -41,7 +41,7 @@ export default async function Categories() {
             name="name"
             required
             maxLength={40}
-            placeholder={lang === "es" ? "ej. Gimnasio, Mascotas, Horas Fede" : "e.g. Gym, Pets, Side gig"}
+            placeholder={lang === "es" ? "ej. Gimnasio, Mascotas, Horas extra" : "e.g. Gym, Pets, Side gig"}
             className="input min-h-11"
           />
         </label>

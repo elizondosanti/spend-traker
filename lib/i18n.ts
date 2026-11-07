@@ -138,7 +138,7 @@ const es = {
   changeTo: "Cambiar a",
   orNewCategory: "o escribí una categoría nueva",
   whatWasIt: "¿Qué fue? Escribí un concepto",
-  conceptPlaceholder: "ej. alimentación, alquiler, pago Fede",
+  conceptPlaceholder: "ej. alimentación, alquiler, pago extra",
   // settings
   language: "Idioma",
   fxRate: "Tipo de cambio (colones por dólar)",
@@ -320,7 +320,7 @@ const en: Dict = {
   changeTo: "Change to",
   orNewCategory: "or type a new category",
   whatWasIt: "What was it? Write a concept",
-  conceptPlaceholder: "e.g. groceries, rent, paid Fede",
+  conceptPlaceholder: "e.g. groceries, rent, side gig",
   language: "Language",
   fxRate: "Exchange rate (colones per dollar)",
   fxHelp: "Used to show the budget in CRC and USD.",

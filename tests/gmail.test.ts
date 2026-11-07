@@ -11,7 +11,7 @@ describe("messageText", () => {
       "<tr><td>Comercio:</td><td>DUNKIN TIBAS</td></tr>" +
       "<tr><td>Ciudad y país:</td><td>SAN JOSE, Costa Rica</td></tr>" +
       "<tr><td>Fecha:</td><td>Nov 3, 2026, 08:15</td></tr>" +
-      "<tr><td>AMEX:</td><td>***********4743</td></tr>" +
+      "<tr><td>AMEX:</td><td>***********1001</td></tr>" +
       "<tr><td>Autorización:</td><td>123456</td></tr>" +
       "<tr><td>Tipo de Transacción:</td><td>COMPRA</td></tr>" +
       "<tr><td>Monto:</td><td>CRC 10,300.00</td></tr></table>";
@@ -31,7 +31,7 @@ describe("messageText", () => {
     const parsed = parseBacEmail(text);
     expect(parsed?.merchant).toBe("DUNKIN TIBAS");
     expect(parsed?.amount).toBe(10300);
-    expect(parsed?.cardLast4).toBe("4743");
+    expect(parsed?.cardLast4).toBe("1001");
   });
 
   it("falls back to text/plain", () => {

@@ -174,7 +174,7 @@ export function sinpeParties(text: string): { greeted: string; actor: string } {
   };
 }
 
-/** How well a name fits an email address, e.g. "Santiago Elizondo" inside elizondosanti0@gmail.com. */
+/** How well a name fits an email address, e.g. "Alex Rivera" inside alex.rivera@example.com. */
 export function scoreNameAgainstEmail(name: string, email: string): number {
   const local = normalizeKey(email.split("@")[0] ?? "").replace(/[0-9]/g, "");
   if (local.length < 4) return 0;

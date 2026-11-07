@@ -31,7 +31,7 @@ export function AuthForms({ labels }: { labels: Labels }) {
         {mode === "register" && (
           <label className="block text-sm">
             <span className="mb-1 block font-medium">{labels.name}</span>
-            <input name="name" required autoComplete="name" placeholder="Santiago Elizondo" className="input" />
+            <input name="name" required autoComplete="name" placeholder="Nombre Apellido" className="input" />
             {labels.nameHelp && <span className="mt-1 block text-xs text-slate-500">{labels.nameHelp}</span>}
           </label>
         )}
