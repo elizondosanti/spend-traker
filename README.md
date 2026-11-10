@@ -2,6 +2,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+**Live demo:** <https://spend-traker.vercel.app> (read-only demo account with synthetic data; sign-up and login are disabled)
+
 A budget tracker for people in Costa Rica who pay with a BAC Credomatic card.
 It reads the bank's notification emails from Gmail (read-only), turns each purchase, SINPE
 transfer, or bill payment into a movement, and files it under a monthly category budget.
